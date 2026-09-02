@@ -100,6 +100,9 @@
 
     <script>
         lucide.createIcons();
+        const BASE_API_URL = "https://medikiosk-backend-8rs2.onrender.com";
+        const WS_API_URL = "wss://medikiosk-backend-8rs2.onrender.com/ws/doctor-updates";
+
         const container = document.getElementById('patient-queue-container');
         let currentRecords = [];
 
@@ -120,7 +123,7 @@
 
         async function fetchLatestRecords() {
             try {
-                const res = await fetch('http://127.0.0.1:8000/api/doctor/summary');
+                const res = await fetch(`${BASE_API_URL}/api/doctor/summary`);
                 currentRecords = await res.json();
 
                 if (!currentRecords || currentRecords.length === 0) {
@@ -210,7 +213,8 @@
             document.getElementById('summary-modal').classList.add('hidden');
         }
 
-        const socket = new WebSocket('ws://127.0.0.1:8000/ws/doctor-updates');
+        // SSL Secure WebSocket Connection to Render
+        const socket = new WebSocket(WS_API_URL);
         socket.onmessage = (event) => {
             fetchLatestRecords();
         };
