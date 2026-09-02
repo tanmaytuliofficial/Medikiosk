@@ -6,6 +6,7 @@ import requests
 import json
 import re
 import io
+import os  # 🔒 Added for Environment Variable Security
 
 app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="13.0.0")
 
@@ -17,8 +18,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 🔑 Apni Groq API Key Paste Kar:
-GROQ_API_KEY = "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"
+# 🔑 Reads GROQ_API_KEY securely from Render Environment Variables / Local Env
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
 class ChatRequest(BaseModel):
     user_message: str
@@ -82,7 +83,6 @@ async def clinical_ai_chat(payload: ChatRequest):
     user_msgs = [m.get("text") for m in history if m.get("sender") == "user"]
     user_msg_count = len(user_msgs)
     
-    # Extract Patient Metadata
     if user_msg_count >= 1 and not details.get("patient_name"):
         details["patient_name"] = user_msgs[0].strip()
 
@@ -103,8 +103,8 @@ async def clinical_ai_chat(payload: ChatRequest):
     show_history_prompt = False
     is_complete = False
 
-    # Dynamic Groq AI Cross-Questioning Call
-    if GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_") and "YOUR_GROQ" not in GROQ_API_KEY:
+    # Groq API Call via env key
+    if GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_"):
         try:
             messages = [{"role": "system", "content": CLINICAL_SYSTEM_PROMPT}]
             for msg in history:
@@ -130,7 +130,7 @@ async def clinical_ai_chat(payload: ChatRequest):
         except Exception as e:
             print("Groq API Error:", e)
 
-    # Fallback Dynamic Cross-Questioning (if key missing)
+    # Dynamic Fallback System
     if not ai_reply:
         if user_msg_count == 1:
             ai_reply = f"Thank you {details.get('patient_name')}! What is your Age and Phone Number?" if lang == 'en' else f"धन्यवाद {details.get('patient_name')}! आपकी उम्र और फोन नंबर क्या है?"
@@ -149,14 +149,12 @@ async def clinical_ai_chat(payload: ChatRequest):
     if user_msg_count >= 4:
         show_history_prompt = True
 
-    # Body Pain Area Auto Extraction for Silhouette
     body_site = "Abdomen"
     if any(w in user_msg.lower() for w in ["head", "sir", "sar"]): body_site = "Head"
     elif any(w in user_msg.lower() for w in ["chest", "chhati"]): body_site = "Chest"
     elif any(w in user_msg.lower() for w in ["back", "peeth"]): body_site = "Back"
     elif any(w in user_msg.lower() for w in ["leg", "pair", "knee"]): body_site = "Lower Extremity"
 
-    # Save Structured Record
     record = {
         "token": 101 + len(PATIENT_RECORDS),
         "patient_name": details.get("patient_name", "Walk-in Patient"),
@@ -164,7 +162,7 @@ async def clinical_ai_chat(payload: ChatRequest):
         "phone": details.get("phone", "N/A"),
         "chief_complaint": details.get("chief_complaint", user_msg),
         "pain_site": body_site,
-        "keywords": ["Acute Pain", "Postprandial Aggravation", body_site + " Discomfort"],
+        "keywords": ["Acute Pain", "SOCRATES Parsed", body_site + " Discomfort"],
         "severity": "8/10",
         "is_red_flag": is_emergency,
         "history": history,
@@ -187,14 +185,11 @@ async def clinical_ai_chat(payload: ChatRequest):
         "patient_details": details
     }
 
-# Real Document Backend Text/OCR Extractor Endpoint
 @app.post("/api/ocr/scan-document")
 async def scan_medical_document(file: UploadFile = File(...)):
     try:
         contents = await file.read()
         extracted_text = ""
-        
-        # Try PDF Extraction
         if file.filename.endswith(".pdf"):
             try:
                 import PyPDF2
