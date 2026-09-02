@@ -17,23 +17,21 @@
         .body-part.active { fill: #ef4444 !important; stroke: #b91c1c !important; }
     </style>
 </head>
-<body class="text-slate-900 min-h-screen flex flex-col justify-between relative overflow-x-hidden">
+<body class="text-slate-900 min-h-screen flex flex-col justify-between relative overflow-x-hidden" onclick="unlockAudio()">
 
     <header id="main-header" class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-50">
         <h1 class="text-2xl font-black text-orange-600">MediKiosk</h1>
     </header>
 
-    <div id="red-flag-banner" class="hidden bg-red-600 text-white px-6 py-4 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 animate-pulse">
+    <div id="red-flag-banner" class="hidden bg-red-600 text-white px-6 py-4 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 animate-bounce">
         <div class="flex items-center space-x-4">
             <i data-lucide="alert-circle" class="w-7 h-7"></i>
             <div>
-                <h3 class="font-extrabold">EMERGENCY ALERT DETECTED</h3>
-                <p class="text-xs">Medical team notified immediately.</p>
+                <h3 class="font-extrabold">🚨 EMERGENCY CRITICAL ALERT DETECTED</h3>
+                <p class="text-xs text-red-100">Medical team & staff notified immediately!</p>
             </div>
         </div>
-        <button onclick="playEmergencyAlarm()" class="bg-white text-red-600 font-bold px-4 py-1.5 rounded-xl text-xs uppercase tracking-wider hover:bg-slate-100">
-            🔔 Test Alarm
-        </button>
+        <span class="bg-white text-red-600 font-bold px-4 py-1.5 rounded-xl text-xs uppercase tracking-wider">PRIORITY 1</span>
     </div>
 
     <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex justify-center items-center">
@@ -62,21 +60,29 @@
             </div>
         </section>
 
-        <!-- STEP 2: VOICE MODE -->
+        <!-- STEP 2: VOICE CONSULTATION MODE -->
         <section id="voice-page" class="hidden w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
             <button onclick="goBackToWelcome()" class="text-xs text-orange-600 font-bold flex items-center gap-1"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back</button>
             <h2 class="text-2xl font-black text-slate-800">Voice Consultation Active</h2>
-            <button id="mic-btn" onclick="toggleMicRecording()" class="w-32 h-32 orange-card text-white rounded-full flex flex-col items-center justify-center mx-auto shadow-xl">
+            
+            <button id="mic-btn" onclick="toggleMicRecording()" class="w-32 h-32 orange-card text-white rounded-full flex flex-col items-center justify-center mx-auto shadow-xl transition hover:scale-105">
                 <i data-lucide="mic" class="w-12 h-12"></i>
-                <span id="mic-status" class="text-[10px] font-bold mt-1">Tap Mic</span>
+                <span id="mic-status" class="text-[10px] font-bold mt-1 uppercase tracking-wider">Tap Mic to Speak</span>
             </button>
-            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left">
-                <p id="voice-user-text" class="text-slate-700 font-semibold italic text-sm">"Tap mic and speak..."</p>
-                <p id="voice-ai-text" class="text-orange-600 font-bold text-sm mt-2">"Waiting..."</p>
+
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left space-y-2">
+                <div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">You Said:</span>
+                    <p id="voice-user-text" class="text-slate-700 font-semibold italic text-sm mt-0.5">"Tap microphone button and speak..."</p>
+                </div>
+                <div class="border-t border-slate-200 pt-2">
+                    <span class="text-[10px] font-bold text-orange-500 uppercase">AI Doctor Assistant:</span>
+                    <p id="voice-ai-text" class="text-orange-950 font-bold text-sm mt-0.5">"Waiting for your speech..."</p>
+                </div>
             </div>
         </section>
 
-        <!-- STEP 3: MAIN CHAT -->
+        <!-- STEP 3: TEXT CHAT MODE -->
         <section id="chat-page" class="hidden w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <div id="chat-container" class="lg:col-span-3 bg-white border border-slate-200 rounded-3xl shadow-xl flex flex-col h-[600px] overflow-hidden transition-all duration-300">
@@ -149,9 +155,10 @@
         let selectedPainSite = "General";
         let stepIndex = 1;
         let audioCtx = null;
+        let recognition = null;
+        let isRecording = false;
 
-        // Initialize AudioContext on first user interaction (To bypass browser autoplay block)
-        function initAudioContext() {
+        function unlockAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
@@ -160,51 +167,148 @@
             }
         }
 
-        document.addEventListener('click', initAudioContext, { once: true });
+        // Initialize Native Free Speech Recognition Engine
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('voice-user-text').innerText = `"${transcript}"`;
+                processVoiceInput(transcript);
+            };
+
+            recognition.onerror = function() { stopMicUI(); };
+            recognition.onend = function() { stopMicUI(); };
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
+                utterance.rate = 0.95;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function toggleMicRecording() {
+            unlockAudio();
+            const micBtn = document.getElementById('mic-btn');
+            const micStatus = document.getElementById('mic-status');
+
+            if (!isRecording) {
+                isRecording = true;
+                micBtn.classList.add('animate-pulse');
+                micStatus.innerText = "Listening...";
+
+                if (recognition) {
+                    recognition.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
+                    recognition.start();
+                } else {
+                    alert("Speech recognition is not supported in this browser. Please try Google Chrome.");
+                    stopMicUI();
+                }
+            } else {
+                if (recognition) recognition.stop();
+                stopMicUI();
+            }
+        }
+
+        function stopMicUI() {
+            isRecording = false;
+            const micBtn = document.getElementById('mic-btn');
+            const micStatus = document.getElementById('mic-status');
+            micBtn.classList.remove('animate-pulse');
+            micStatus.innerText = "Tap Mic to Speak";
+        }
+
+        async function processVoiceInput(userMsg) {
+            chatMemory.push({ sender: "user", text: userMsg });
+            document.getElementById('voice-ai-text').innerText = "Thinking...";
+
+            try {
+                const res = await fetch(`${BASE_API_URL}/api/chat/ai-assistant`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_message: userMsg,
+                        chat_history: chatMemory,
+                        language: currentLang,
+                        patient_details: patientDetails,
+                        pain_site: selectedPainSite
+                    })
+                });
+
+                const data = await res.json();
+                patientDetails = data.patient_details;
+
+                document.getElementById('voice-ai-text').innerText = `"${data.reply}"`;
+                chatMemory.push({ sender: "assistant", text: data.reply });
+
+                // Speak Response Out Loud
+                speakText(data.reply);
+
+                if (data.is_red_flag) {
+                    document.getElementById('red-flag-banner').classList.remove('hidden');
+                    playEmergencyAlarm();
+                }
+            } catch (err) {
+                console.error("Voice Processing Error:", err);
+            }
+        }
 
         function playEmergencyAlarm() {
+            unlockAudio();
             try {
-                initAudioContext();
-                if (!audioCtx) return;
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
 
+                const now = audioCtx.currentTime;
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
 
                 osc.type = 'sawtooth';
-                // Oscillating Siren Pitch
-                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(1400, audioCtx.currentTime + 0.3);
-                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.6);
-                osc.frequency.exponentialRampToValueAtTime(1400, audioCtx.currentTime + 0.9);
+                osc.frequency.setValueAtTime(880, now);
+                osc.frequency.setValueAtTime(1200, now + 0.2);
+                osc.frequency.setValueAtTime(880, now + 0.4);
+                osc.frequency.setValueAtTime(1200, now + 0.6);
 
-                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.2);
+                gain.gain.setValueAtTime(0.8, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
 
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
 
-                osc.start();
-                osc.stop(audioCtx.currentTime + 1.2);
+                osc.start(now);
+                osc.stop(now + 0.8);
             } catch (e) {
-                console.error("Audio Alarm Error:", e);
+                console.error("Audio playback error:", e);
             }
         }
 
         function selectLanguage(lang) {
-            initAudioContext();
+            unlockAudio();
             currentLang = lang;
             document.getElementById('lang-page').classList.add('hidden');
             document.getElementById('landing-page').classList.remove('hidden');
         }
 
         function openVoiceMode() {
-            initAudioContext();
+            unlockAudio();
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('voice-page').classList.remove('hidden');
+            chatMemory = [];
+            patientDetails = {};
+            const welcomeText = currentLang === 'hi' ? "नमस्ते! मैं मेडिकियोस्क सहायक हूँ। कृपया अपना पूरा नाम बताएं?" : "Welcome! I am MediKiosk Assistant. Could you please state your Full Name?";
+            document.getElementById('voice-ai-text').innerText = `"${welcomeText}"`;
+            speakText(welcomeText);
         }
 
         function openChatMode() {
-            initAudioContext();
+            unlockAudio();
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('chat-page').classList.remove('hidden');
             chatMemory = [];
@@ -228,6 +332,8 @@
         }
 
         function goBackToWelcome() {
+            if (recognition && isRecording) recognition.stop();
+            window.speechSynthesis.cancel();
             document.getElementById('voice-page').classList.add('hidden');
             document.getElementById('chat-page').classList.add('hidden');
             document.getElementById('landing-page').classList.remove('hidden');
@@ -263,7 +369,7 @@
 
         async function handleChatSubmit(e) {
             e.preventDefault();
-            initAudioContext();
+            unlockAudio();
             const input = document.getElementById('chat-input');
             const chatBox = document.getElementById('chat-box');
             const userMsg = input.value.trim();
