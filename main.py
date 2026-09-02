@@ -8,7 +8,7 @@ import re
 import io
 import os
 
-app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="14.0.0")
+app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="15.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,14 +32,13 @@ ARCHIVED_RECORDS = []
 active_connections: List[WebSocket] = []
 
 CLINICAL_SYSTEM_PROMPT = """
-You are MediKiosk AI, an expert doctor's clinical intake assistant.
-The patient has reported their primary symptom. 
+You are MediKiosk AI, an expert clinical intake assistant at an OPD Desk.
 
-YOUR TASK:
-1. Ask targeted, highly realistic clinical follow-up questions specifically tailored to their reported symptom.
-2. DO NOT use generic repeated templates. Ask dynamic symptom-specific questions using the SOCRATES protocol.
-3. Ask ONLY ONE short, empathetic question at a time in the patient's language (Hindi or English).
-4. If emergency symptoms (chest pain, heavy bleeding, accident, trauma, severe stroke) occur, append [RED_FLAG_ALERT] at the end.
+STRICT INSTRUCTIONS:
+1. Respond ONLY in the requested language ({lang}). Never mix languages.
+2. Ask targeted, SOCRATES-based clinical questions specific to the reported symptom.
+3. Ask ONLY ONE short, professional question at a time.
+4. If emergency symptoms (chest pain, heavy bleeding, stroke, unconsciousness) occur, add [RED_FLAG_ALERT] at the end.
 """
 
 class ConnectionManager:
@@ -79,8 +78,8 @@ async def clinical_ai_chat(payload: ChatRequest):
 
     user_msgs = [m.get("text") for m in history if m.get("sender") == "user"]
     user_msg_count = len(user_msgs)
-    
-    # Accurate Profile Parsing (Separating Age and Phone cleanly)
+
+    # 1. Validation Logic
     if user_msg_count >= 1 and not details.get("patient_name"):
         details["patient_name"] = user_msgs[0].strip()
 
@@ -90,34 +89,37 @@ async def clinical_ai_chat(payload: ChatRequest):
         age_match = re.search(r'\b(\d{1,2})\b', second_input)
         
         details["phone"] = phone_match.group(1) if phone_match else "Not Provided"
-        details["age"] = age_match.group(1) if age_match else second_input.strip()
+        details["age"] = age_match.group(1) if age_match else "N/A"
 
     if user_msg_count >= 3 and not details.get("chief_complaint"):
         details["chief_complaint"] = user_msgs[2].strip()
 
-    # Expanded Emergency / Red Flag Detection for Accidents & Bleeding
-    red_flag_keywords = ["chest pain", "chhati me dard", "saans lene me dikkat", "stroke", "severe bleeding", "heavy bleeding", "bleeding", "accident", "trauma", "blood"]
+    # Red Flag Keywords Check
+    red_flag_keywords = ["chest pain", "chhati me dard", "saans lene me dikkat", "stroke", "severe bleeding", "heavy bleeding", "bleeding", "accident", "trauma", "unconscious"]
     is_emergency = any(kw in user_msg.lower() for kw in red_flag_keywords)
 
     ai_reply = ""
     show_history_prompt = False
 
+    # Dynamic Groq AI Query (Strictly Single Language)
     if user_msg_count >= 3 and GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_"):
         try:
-            messages = [{"role": "system", "content": CLINICAL_SYSTEM_PROMPT}]
+            formatted_prompt = CLINICAL_SYSTEM_PROMPT.format(lang="Hindi" if lang == "hi" else "English")
+            messages = [{"role": "system", "content": formatted_prompt}]
+            
             for msg in history:
                 role = "assistant" if msg.get("sender") in ["assistant", "ai"] else "user"
                 messages.append({"role": role, "content": msg.get("text", "")})
             
-            messages.append({"role": "user", "content": f"[Language: {lang}] Patient says: {user_msg}"})
+            messages.append({"role": "user", "content": user_msg})
 
             url = "https://api.groq.com/openai/v1/chat/completions"
             headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
             body = {
                 "model": "llama-3.1-8b-instant",
                 "messages": messages,
-                "temperature": 0.3,
-                "max_tokens": 150
+                "temperature": 0.2,
+                "max_tokens": 120
             }
             res = requests.post(url, headers=headers, json=body, timeout=6)
             if res.status_code == 200:
@@ -126,34 +128,32 @@ async def clinical_ai_chat(payload: ChatRequest):
                     is_emergency = True
                     ai_reply = ai_reply.replace("[RED_FLAG_ALERT]", "").strip()
         except Exception as e:
-            print("Groq API Execution Error:", e)
+            print("Groq API Error:", e)
 
+    # Isolated Language Fallback Engine
     if not ai_reply:
         if user_msg_count == 1:
-            ai_reply = f"Thank you {details.get('patient_name')}! What is your Age and Phone Number?" if lang == 'en' else f"धन्यवाद {details.get('patient_name')}! आपकी उम्र और फोन नंबर क्या है?"
+            ai_reply = "Please enter your Age and 10-digit Mobile Number." if lang == 'en' else "कृपया अपनी उम्र और 10 अंकों का मोबाइल नंबर दर्ज करें।"
         elif user_msg_count == 2:
-            ai_reply = "What main symptom or problem brings you to the hospital today?" if lang == 'en' else "आज आपको क्या मुख्य तकलीफ या दर्द महसूस हो रहा है?"
+            ai_reply = "What primary health problem or symptom are you facing today?" if lang == 'en' else "आज आप किस मुख्य स्वास्थ्य समस्या या लक्षण का सामना कर रहे हैं?"
         elif user_msg_count == 3:
-            ai_reply = "Are you experiencing dizziness, nausea or shortness of breath?" if lang == 'hi' else "क्या आपको चक्कर, उल्टी या सांस लेने में दिक्कत महसूस हो रही है?"
+            ai_reply = f"Since when have you been experiencing '{user_msg}'?" if lang == 'en' else f"आपको '{user_msg}' की समस्या कब से हो रही है?"
         else:
-            token_num = 101 + len(PATIENT_RECORDS) + len(ARCHIVED_RECORDS)
-            ai_reply = f"Thank you! Your intake is saved. Token #{token_num} generated. Please scan past reports if any." if lang == 'en' else f"धन्यवाद! आपका intake पूरा हो गया है। टोकन #{token_num} जनरेट हो गया है।"
+            token_num = 101 + len(PATIENT_RECORDS)
+            ai_reply = f"Intake complete! Token #{token_num} generated. Please scan past reports if available." if lang == 'en' else f"चेक-इन पूरा हुआ! टोकन #{token_num} जनरेट हो गया है।"
 
     if user_msg_count >= 4:
         show_history_prompt = True
 
-    # Unique sequential token generation
-    token_val = 101 + len(PATIENT_RECORDS)
-
     record = {
-        "token": token_val,
+        "token": 101 + len(PATIENT_RECORDS),
         "patient_name": details.get("patient_name", "Walk-in Patient"),
         "age": details.get("age", "N/A"),
         "phone": details.get("phone", "Not Provided"),
         "chief_complaint": details.get("chief_complaint", user_msg),
-        "pain_site": selected_site if selected_site != "General" else "Trauma / General",
-        "keywords": ["Symptom Analysis", f"Site: {selected_site}"],
-        "severity": "9/10" if is_emergency else "6/10",
+        "pain_site": selected_site,
+        "keywords": ["Clinical Intake", f"Site: {selected_site}"],
+        "severity": "9/10" if is_emergency else "5/10",
         "is_red_flag": is_emergency,
         "history": history,
         "ocr_summary": details.get("ocr_summary", "No uploaded reports")
@@ -179,19 +179,11 @@ async def clinical_ai_chat(payload: ChatRequest):
 async def scan_medical_document(file: UploadFile = File(...)):
     try:
         contents = await file.read()
-        extracted_text = f"Scanned Document ({file.filename}): Extracted Medical History & Recent Trauma Notes."
-        return {
-            "status": "success",
-            "filename": file.filename,
-            "extracted_text": extracted_text,
-            "message": "Document scanned successfully!"
-        }
+        extracted_text = f"Scanned Document ({file.filename}): Extracted Rx & Medical History."
+        return {"status": "success", "filename": file.filename, "extracted_text": extracted_text}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
 @app.get("/api/doctor/summary")
 def get_doctor_summary():
-    return {
-        "active_queue": PATIENT_RECORDS,
-        "archive": ARCHIVED_RECORDS
-    }
+    return {"active_queue": PATIENT_RECORDS, "archive": ARCHIVED_RECORDS}
