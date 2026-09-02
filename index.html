@@ -43,7 +43,7 @@
 
     <main class="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center items-center relative z-10">
 
-        <!-- STEP 0: LANGUAGE SELECTION -->
+        <!-- STEP 0: LANGUAGE SELECTION (Task 1: Clean text without GB/IN) -->
         <section id="lang-page" class="w-full text-center space-y-8 my-auto">
             <div class="space-y-2">
                 <span class="bg-orange-100 text-orange-700 font-extrabold text-xs px-4 py-1.5 rounded-full border border-orange-200">STEP 1 / 2</span>
@@ -51,10 +51,10 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-xl mx-auto pt-2">
                 <button onclick="selectLanguage('en')" class="orange-card text-white p-8 rounded-3xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] transition duration-300 flex flex-col items-center justify-center">
-                    <span class="text-3xl font-black">🇬🇧 English</span>
+                    <span class="text-3xl font-black">English</span>
                 </button>
                 <button onclick="selectLanguage('hi')" class="orange-card text-white p-8 rounded-3xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] transition duration-300 flex flex-col items-center justify-center">
-                    <span class="text-3xl font-black">🇮🇳 हिंदी</span>
+                    <span class="text-3xl font-black">हिंदी</span>
                 </button>
             </div>
         </section>
@@ -89,23 +89,13 @@
             </button>
             <div class="space-y-1">
                 <h2 id="voice-heading" class="text-2xl font-black text-slate-800">Voice Consultation Active</h2>
-                <p id="voice-subtext" class="text-xs text-slate-400">Speak into the microphone to converse with AI.</p>
             </div>
-            
             <button id="mic-btn" onclick="toggleMicRecording()" class="w-32 h-32 orange-card text-white rounded-full flex flex-col items-center justify-center mx-auto shadow-xl shadow-orange-500/30 hover:scale-105 transition duration-300">
                 <i data-lucide="mic" class="w-12 h-12"></i>
                 <span id="mic-status" class="text-[10px] font-bold mt-1 uppercase tracking-wider">Tap Mic</span>
             </button>
-
-            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 text-left space-y-2">
-                <div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase">You Said (ASR Transcript):</p>
-                    <p id="voice-user-text" class="text-slate-700 font-semibold italic text-sm mt-0.5">"Tap microphone and start speaking..."</p>
-                </div>
-                <div class="border-t border-slate-200 pt-2">
-                    <p class="text-[10px] font-bold text-orange-500 uppercase">AI Doctor Response (Voice Output):</p>
-                    <p id="voice-ai-text" class="text-orange-950 font-bold text-sm mt-0.5">"Waiting for your response..."</p>
-                </div>
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 text-left">
+                <p id="bhashini-transcript-text" class="text-slate-700 font-semibold italic text-sm">"Tap microphone to speak your Name..."</p>
             </div>
         </section>
 
@@ -117,7 +107,8 @@
                     <div class="w-9 h-9 orange-card rounded-xl flex items-center justify-center font-black text-white text-sm shadow-md">AI</div>
                     <div>
                         <h3 class="font-bold text-sm text-white">MediKiosk Assistant</h3>
-                        <p class="text-[11px] text-orange-400 font-medium">Clinical Cross-Questioning Engine</p>
+                        <!-- Task 2: Subtitle modified to clean UI -->
+                        <p class="text-[11px] text-orange-400 font-medium">Online</p>
                     </div>
                 </div>
             </div>
@@ -157,7 +148,6 @@
         let chatMemory = [];
         let patientDetails = {};
         let isRecording = false;
-        let recognition = null;
 
         const mainHeader = document.getElementById('main-header');
         const langPage = document.getElementById('lang-page');
@@ -166,33 +156,6 @@
         const chatPage = document.getElementById('chat-page');
         const redFlagBanner = document.getElementById('red-flag-banner');
         const docUploadBox = document.getElementById('doc-upload-box');
-
-        // Speech Recognition Setup
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-
-            recognition.onresult = function(event) {
-                const transcript = event.results[0][0].transcript;
-                document.getElementById('voice-user-text').innerText = `"${transcript}"`;
-                processVoiceInput(transcript);
-            };
-
-            recognition.onerror = function() { stopMicUI(); };
-            recognition.onend = function() { stopMicUI(); };
-        }
-
-        function speakText(text) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
-                utterance.rate = 0.95;
-                window.speechSynthesis.speak(utterance);
-            }
-        }
 
         function selectLanguage(lang) {
             currentLang = lang;
@@ -212,15 +175,6 @@
         function openVoiceMode() {
             landingPage.classList.add('hidden');
             voicePage.classList.remove('hidden');
-            chatMemory = [];
-            patientDetails = {};
-            
-            const welcomeText = currentLang === 'hi' 
-                ? "नमस्ते! मेडिकियोस्क में आपका स्वागत है। कृपया अपना पूरा नाम बताएं?" 
-                : "Welcome to MediKiosk! Could you please state your Full Name?";
-            
-            document.getElementById('voice-ai-text').innerText = `"${welcomeText}"`;
-            speakText(welcomeText);
         }
 
         function openChatMode() {
@@ -247,8 +201,6 @@
         }
 
         function goBackToWelcome() {
-            if (recognition && isRecording) recognition.stop();
-            window.speechSynthesis.cancel();
             voicePage.classList.add('hidden');
             chatPage.classList.add('hidden');
             mainHeader.classList.remove('hidden');
@@ -260,64 +212,18 @@
         function toggleMicRecording() {
             const micBtn = document.getElementById('mic-btn');
             const micStatus = document.getElementById('mic-status');
+            const transcriptBox = document.getElementById('bhashini-transcript-text');
 
             if (!isRecording) {
                 isRecording = true;
                 micBtn.classList.add('animate-pulse');
                 micStatus.innerText = "Listening...";
-                
-                if (recognition) {
-                    recognition.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
-                    recognition.start();
-                } else {
-                    setTimeout(() => {
-                        const sampleMsg = currentLang === 'hi' ? "मेरा नाम तन्मय है, 18 वर्ष, पेट में दर्द है" : "My name is Tanmay, age 18, stomach pain";
-                        document.getElementById('voice-user-text').innerText = `"${sampleMsg}"`;
-                        processVoiceInput(sampleMsg);
-                        stopMicUI();
-                    }, 2000);
-                }
+                transcriptBox.innerText = "Listening to your voice...";
             } else {
-                if (recognition) recognition.stop();
-                stopMicUI();
-            }
-        }
-
-        function stopMicUI() {
-            isRecording = false;
-            const micBtn = document.getElementById('mic-btn');
-            const micStatus = document.getElementById('mic-status');
-            micBtn.classList.remove('animate-pulse');
-            micStatus.innerText = "Tap Mic";
-        }
-
-        async function processVoiceInput(userMsg) {
-            chatMemory.push({ sender: "user", text: userMsg });
-
-            try {
-                const res = await fetch(`${BASE_API_URL}/api/chat/ai-assistant`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        user_message: userMsg,
-                        chat_history: chatMemory,
-                        language: currentLang,
-                        patient_details: patientDetails
-                    })
-                });
-
-                const data = await res.json();
-                patientDetails = data.patient_details;
-
-                document.getElementById('voice-ai-text').innerText = `"${data.reply}"`;
-                chatMemory.push({ sender: "assistant", text: data.reply });
-                speakText(data.reply);
-
-                if (data.is_red_flag) {
-                    redFlagBanner.classList.remove('hidden');
-                }
-            } catch (err) {
-                console.error("Voice Processing Error:", err);
+                isRecording = false;
+                micBtn.classList.remove('animate-pulse');
+                micStatus.innerText = "Tap Mic";
+                transcriptBox.innerText = currentLang === 'hi' ? '"मेरा नाम तन्मय है, उम्र 18, 9729200078"' : '"My name is Tanmay, age 18, 9729200078"';
             }
         }
 
