@@ -8,7 +8,7 @@ import re
 import io
 import os
 
-app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="16.0.0")
+app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="17.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,14 +32,18 @@ ARCHIVED_RECORDS = []
 active_connections: List[WebSocket] = []
 
 CLINICAL_SYSTEM_PROMPT = """
-You are MediKiosk AI, an expert clinical intake assistant at an OPD Desk.
+You are MediKiosk AI, a thorough clinical intake assistant at an OPD Desk.
 
-RULES:
-1. Respond ONLY in {lang}.
-2. Conduct deep SOCRATES cross-questioning based on reported symptoms. Ask about duration, severity, and associated issues.
-3. Ask ONLY ONE focused question at a time.
-4. After 2-3 clinical follow-ups, naturally ask: "Kya aisa dard aapko pehle bhi kabhi hua hai?" (Or "Have you experienced similar pain in the past?").
-5. If emergency symptoms (chest pain, heavy bleeding, accident, trauma) occur, append [RED_FLAG_ALERT] at the end.
+MANDATORY RULES:
+1. Respond strictly in {lang}.
+2. Conduct an IN-DEPTH medical assessment asking 5 to 6 detailed clinical follow-up questions one by one using the SOCRATES protocol:
+   - Question 1: Specific nature/type of pain (throbbing, sharp, burning, dull ache).
+   - Question 2: Radiation (does pain travel to back, arm, or shoulders?).
+   - Question 3: Aggravating/Relieving factors (does it increase after meals, walking, or resting?).
+   - Question 4: Severity rating out of 10 and associated symptoms (fever, nausea, vomiting, dizziness).
+   - Question 5: Past medical history or similar episodes in the past.
+3. NEVER end the conversation early. Ask ONLY ONE focused clinical question per response.
+4. If emergency red-flag symptoms occur (severe chest pain, heavy bleeding, sudden weakness/stroke), append [RED_FLAG_ALERT] at the end.
 """
 
 class ConnectionManager:
@@ -80,7 +84,7 @@ async def clinical_ai_chat(payload: ChatRequest):
     user_msgs = [m.get("text") for m in history if m.get("sender") == "user"]
     user_msg_count = len(user_msgs)
 
-    # 1. Profile Extraction
+    # Extracting Basic Details
     if user_msg_count >= 1 and not details.get("patient_name"):
         details["patient_name"] = user_msgs[0].strip()
 
@@ -94,9 +98,9 @@ async def clinical_ai_chat(payload: ChatRequest):
     if user_msg_count >= 3 and not details.get("chief_complaint"):
         details["chief_complaint"] = user_msgs[2].strip()
 
-    # Automatic Pain Site Detection from Text
+    # Pain Site Detection
     msg_lower = user_msg.lower()
-    if any(w in msg_lower for w in ["stomach", "pet", "belly", "abdomen", "gastric"]):
+    if any(w in msg_lower for w in ["stomach", "pet", "belly", "abdomen", "gastric", "acidity", "vomit"]):
         selected_site = "Abdomen"
     elif any(w in msg_lower for w in ["head", "sir", "sar", "headache"]):
         selected_site = "Head"
@@ -113,7 +117,7 @@ async def clinical_ai_chat(payload: ChatRequest):
     ai_reply = ""
     show_history_prompt = False
 
-    # Groq AI Dynamic Flow
+    # Dynamic Groq AI Query (Continuous Deep Assessment)
     if user_msg_count >= 3 and GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_"):
         try:
             formatted_prompt = CLINICAL_SYSTEM_PROMPT.format(lang="Hindi" if lang == "hi" else "English")
@@ -130,8 +134,8 @@ async def clinical_ai_chat(payload: ChatRequest):
             body = {
                 "model": "llama-3.1-8b-instant",
                 "messages": messages,
-                "temperature": 0.2,
-                "max_tokens": 120
+                "temperature": 0.3,
+                "max_tokens": 150
             }
             res = requests.post(url, headers=headers, json=body, timeout=6)
             if res.status_code == 200:
@@ -142,22 +146,28 @@ async def clinical_ai_chat(payload: ChatRequest):
         except Exception as e:
             print("Groq API Error:", e)
 
-    # Fallback Logic
+    # Controlled Fallback Flow with Extended Question Sequence
     if not ai_reply:
         if user_msg_count == 1:
             ai_reply = "Please enter your Age and 10-digit Mobile Number." if lang == 'en' else "कृपया अपनी उम्र और 10 अंकों का मोबाइल नंबर दर्ज करें।"
         elif user_msg_count == 2:
             ai_reply = "What primary health problem or symptom are you facing today?" if lang == 'en' else "आज आप किस मुख्य स्वास्थ्य समस्या या लक्षण का सामना कर रहे हैं?"
         elif user_msg_count == 3:
-            ai_reply = f"Since when have you been experiencing this, and is it worse after eating?" if lang == 'en' else "यह समस्या आपको कब से हो रही है, और क्या खाना खाने के बाद ज्यादा होती है?"
+            ai_reply = "How would you describe the feeling (e.g. sharp, burning, dull ache, or throbbing)?" if lang == 'en' else "आप इस तकलीफ को कैसे बयां करेंगे (जैसे तेज दर्द, जलन, या मीठा-मीठा दर्द)?"
         elif user_msg_count == 4:
+            ai_reply = "Does this discomfort spread to any other body part like your back, arm, or shoulders?" if lang == 'en' else "क्या यह दर्द शरीर के किसी और हिस्से (जैसे पीठ, हाथ या कंधों) तक भी फैलता है?"
+        elif user_msg_count == 5:
+            ai_reply = "Does it increase or decrease after eating food, taking rest, or walking?" if lang == 'en' else "क्या यह खाना खाने के बाद, आराम करने पर या चलने-फिरने पर बढ़ता या घटता है?"
+        elif user_msg_count == 6:
+            ai_reply = "Are you experiencing any accompanying symptoms like fever, nausea, vomiting, or dizziness?" if lang == 'en' else "क्या इसके साथ बुखार, उल्टी, चक्कर या घबराहट जैसी कोई और दिक्कत भी महसूस हो रही है?"
+        elif user_msg_count == 7:
             ai_reply = "Have you experienced similar pain or medical issues in the past?" if lang == 'en' else "क्या आपको अतीत में भी कभी ऐसा दर्द या स्वास्थ्य समस्या हुई है?"
         else:
             token_num = 101 + len(PATIENT_RECORDS)
-            ai_reply = f"Intake complete! Token #{token_num} generated." if lang == 'en' else f"चेक-इन पूरा हुआ! टोकन #{token_num} जनरेट हो गया है।"
+            ai_reply = f"Clinical intake complete! Token #{token_num} generated." if lang == 'en' else f"नैदानिक चेक-इन पूरा हुआ! टोकन #{token_num} जनरेट हो गया है।"
 
-    # Trigger OCR scan option if patient answers "Yes" to past history query
-    if any(w in msg_lower for w in ["yes", "haan", "ha", "pehle bhi", "past"]):
+    # Show Document Upload Option only after deeper intake (User Msg Count >= 6)
+    if user_msg_count >= 6 and any(w in msg_lower for w in ["yes", "haan", "ha", "pehle bhi", "past", "earlier", "doctor"]):
         show_history_prompt = True
 
     record = {
@@ -195,7 +205,7 @@ async def clinical_ai_chat(payload: ChatRequest):
 async def scan_medical_document(file: UploadFile = File(...)):
     try:
         contents = await file.read()
-        extracted_text = f"Scanned Document ({file.filename}): Extracted Rx & Medical History."
+        extracted_text = f"Scanned Document ({file.filename}): Extracted Medical History & Past Rx."
         return {"status": "success", "filename": file.filename, "extracted_text": extracted_text}
     except Exception as e:
         return {"status": "error", "message": str(e)}
