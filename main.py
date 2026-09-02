@@ -8,7 +8,7 @@ import re
 import io
 import os
 
-app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="19.0.0")
+app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="20.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,7 +34,6 @@ active_connections: List[WebSocket] = []
 CURRENT_TOKEN_COUNTER = 101
 
 def clean_patient_name(raw_text: str) -> str:
-    """Strips conversational prefixes like 'my name is', 'mera naam', etc."""
     cleaned = raw_text.strip()
     prefixes = [
         r"^my name is\s+", r"^i am\s+", r"^this is\s+",
@@ -42,8 +41,6 @@ def clean_patient_name(raw_text: str) -> str:
     ]
     for pattern in prefixes:
         cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE)
-    
-    # Remove trailing words like 'hai'
     cleaned = re.sub(r"\shai$", "", cleaned, flags=re.IGNORECASE).strip()
     return cleaned.title() if cleaned else raw_text.title()
 
@@ -102,19 +99,20 @@ async def clinical_ai_chat(payload: ChatRequest):
     user_msgs = [m.get("text") for m in history if m.get("sender") == "user"]
     user_msg_count = len(user_msgs)
 
-    # 1. Clean Name Extraction (Removes "My name is...")
+    # 1. Separate Step Extraction (Name -> Age -> Phone -> Complaint)
     if user_msg_count >= 1 and not details.get("patient_name"):
         details["patient_name"] = clean_patient_name(user_msgs[0])
 
     if user_msg_count >= 2 and not details.get("age"):
-        second_input = user_msgs[1]
-        phone_match = re.search(r'\b(\d{10})\b', second_input)
-        age_match = re.search(r'\b(\d{1,2})\b', second_input)
-        details["phone"] = phone_match.group(1) if phone_match else "Not Provided"
-        details["age"] = age_match.group(1) if age_match else "N/A"
+        age_match = re.search(r'\b(\d{1,2})\b', user_msgs[1])
+        details["age"] = age_match.group(1) if age_match else user_msgs[1].strip()
 
-    if user_msg_count >= 3 and not details.get("chief_complaint"):
-        details["chief_complaint"] = user_msgs[2].strip()
+    if user_msg_count >= 3 and not details.get("phone"):
+        phone_match = re.search(r'\b(\d{10})\b', user_msgs[2])
+        details["phone"] = phone_match.group(1) if phone_match else "Not Provided"
+
+    if user_msg_count >= 4 and not details.get("chief_complaint"):
+        details["chief_complaint"] = user_msgs[3].strip()
 
     # Pain Site Auto-Detection
     msg_lower = user_msg.lower()
@@ -135,8 +133,8 @@ async def clinical_ai_chat(payload: ChatRequest):
     ai_reply = ""
     show_history_prompt = False
 
-    # Dynamic Groq AI Query
-    if user_msg_count >= 3 and GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_"):
+    # Dynamic Groq AI Query (Triggered after basic profile intake >= 4)
+    if user_msg_count >= 4 and GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_"):
         try:
             formatted_prompt = CLINICAL_SYSTEM_PROMPT.format(lang="Hindi" if lang == "hi" else "English")
             messages = [{"role": "system", "content": formatted_prompt}]
@@ -164,26 +162,26 @@ async def clinical_ai_chat(payload: ChatRequest):
         except Exception as e:
             print("Groq API Error:", e)
 
-    # Fallback Extended Flow
+    # Fallback Step-by-Step Flow
     if not ai_reply:
         if user_msg_count == 1:
-            ai_reply = "Please enter your Age and 10-digit Mobile Number." if lang == 'en' else "कृपया अपनी उम्र और 10 अंकों का मोबाइल नंबर दर्ज करें।"
+            ai_reply = "What is your Age?" if lang == 'en' else "आपकी उम्र कितनी है?"
         elif user_msg_count == 2:
-            ai_reply = "What primary health problem or symptom are you facing today?" if lang == 'en' else "आज आप किस मुख्य स्वास्थ्य समस्या या लक्षण का सामना कर रहे हैं?"
+            ai_reply = "Please enter your 10-digit Mobile Number." if lang == 'en' else "कृपया अपना 10 अंकों का मोबाइल नंबर दर्ज करें।"
         elif user_msg_count == 3:
-            ai_reply = "How would you describe the feeling (e.g. sharp, burning, dull ache, or throbbing)?" if lang == 'en' else "आप इस तकलीफ को कैसे बयां करेंगे (जैसे तेज दर्द, जलन, या मीठा-मीठा दर्द)?"
+            ai_reply = "What main health problem or symptom brings you to the hospital today?" if lang == 'en' else "आज आप किस मुख्य स्वास्थ्य समस्या या लक्षण के इलाज के लिए आए हैं?"
         elif user_msg_count == 4:
-            ai_reply = "Does this discomfort spread to any other body part like your back, arm, or shoulders?" if lang == 'en' else "क्या यह दर्द शरीर के किसी और हिस्से (जैसे पीठ, हाथ या कंधों) तक भी फैलता है?"
+            ai_reply = "How would you describe the pain/symptom (e.g., sharp, burning, dull ache, or throbbing)?" if lang == 'en' else "आप इस तकलीफ को कैसे बयां करेंगे (जैसे तेज दर्द, जलन, या मीठा-मीठा दर्द)?"
         elif user_msg_count == 5:
-            ai_reply = "Does it increase or decrease after eating food, taking rest, or walking?" if lang == 'en' else "क्या यह खाना खाने के बाद, आराम करने पर या चलने-फिरने पर बढ़ता या घटता है?"
+            ai_reply = "Does this discomfort spread to any other body part like your back, arm, or shoulders?" if lang == 'en' else "क्या यह दर्द शरीर के किसी और हिस्से (जैसे पीठ, हाथ या कंधों) तक भी फैलता है?"
         elif user_msg_count == 6:
-            ai_reply = "Are you experiencing any accompanying symptoms like fever, nausea, vomiting, or dizziness?" if lang == 'en' else "क्या इसके साथ बुखार, उल्टी, चक्कर या घबराहट जैसी कोई और दिक्कत भी महसूस हो रही है?"
+            ai_reply = "Does it increase or decrease after eating food, taking rest, or walking?" if lang == 'en' else "क्या यह खाना खाने के बाद, आराम करने पर या चलने-फिरने पर बढ़ता या घटता है?"
         elif user_msg_count == 7:
-            ai_reply = "Have you experienced similar pain or medical issues in the past?" if lang == 'en' else "क्या आपको अतीत में भी कभी ऐसा दर्द या स्वास्थ्य समस्या हुई है?"
+            ai_reply = "Have you experienced similar medical issues in the past?" if lang == 'en' else "क्या आपको अतीत में भी कभी ऐसा दर्द या स्वास्थ्य समस्या हुई है?"
         else:
             ai_reply = f"Clinical intake complete! Token generated." if lang == 'en' else f"नैदानिक चेक-इन पूरा हुआ! टोकन जनरेट हो गया है।"
 
-    if user_msg_count >= 6 and any(w in msg_lower for w in ["yes", "haan", "ha", "pehle bhi", "past", "earlier", "doctor"]):
+    if user_msg_count >= 7 and any(w in msg_lower for w in ["yes", "haan", "ha", "pehle bhi", "past", "earlier", "doctor"]):
         show_history_prompt = True
 
     # Token Assignment
