@@ -47,8 +47,8 @@
         <section id="lang-page" class="w-full text-center space-y-8 my-auto max-w-xl">
             <h1 class="text-4xl font-black text-slate-900">Select Language / भाषा चुनें</h1>
             <div class="grid grid-cols-2 gap-6 pt-2">
-                <button onclick="selectLanguage('en')" class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg">English</button>
-                <button onclick="selectLanguage('hi')" class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg">हिंदी</button>
+                <button onclick="selectLanguage('en')" class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">English</button>
+                <button onclick="selectLanguage('hi')" class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">हिंदी</button>
             </div>
         </section>
 
@@ -56,11 +56,11 @@
         <section id="landing-page" class="hidden w-full text-center space-y-8 my-auto max-w-2xl">
             <h1 class="text-4xl font-black text-orange-600">Welcome To MediKiosk</h1>
             <div class="grid grid-cols-2 gap-6 pt-2">
-                <button onclick="openVoiceMode()" class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2">
+                <button onclick="openVoiceMode()" class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
                     <i data-lucide="mic" class="w-8 h-8 mx-auto"></i>
                     <div>Voice Consultation</div>
                 </button>
-                <button onclick="openChatMode()" class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2">
+                <button onclick="openChatMode()" class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
                     <i data-lucide="message-square" class="w-8 h-8 mx-auto"></i>
                     <div>Text Consultation</div>
                 </button>
@@ -165,6 +165,7 @@
         let recognition = null;
         let isRecording = false;
         let voiceGuideEnabled = true;
+        let initialPromptSpoken = false;
 
         function unlockAudio() {
             if (!audioCtx) {
@@ -173,12 +174,49 @@
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
+
+            // Speak initial language prompt on first page click if not spoken already
+            if (!initialPromptSpoken && document.getElementById('lang-page') && !document.getElementById('lang-page').classList.contains('hidden')) {
+                initialPromptSpoken = true;
+                speakText("Please choose your language. कृपया अपनी भाषा चुनें।", "bilingual");
+            }
         }
+
+        // High-Quality Speech Synthesis Engine
+        function speakText(text, mode = 'normal') {
+            if (voiceGuideEnabled && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                const voices = window.speechSynthesis.getVoices();
+                
+                if (mode === 'bilingual') {
+                    utterance.lang = 'hi-IN';
+                } else {
+                    utterance.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
+                    
+                    // Priority High-Quality Voice Selection
+                    const preferredVoice = voices.find(v => 
+                        (currentLang === 'hi' && v.lang.includes('hi')) ||
+                        (currentLang === 'en' && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Samantha') || v.name.includes('Zira')))
+                    );
+                    if (preferredVoice) utterance.voice = preferredVoice;
+                }
+
+                utterance.rate = 0.92;
+                utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        window.speechSynthesis.onvoiceschanged = function() {
+            // Pre-load browser voices
+            window.speechSynthesis.getVoices();
+        };
 
         function toggleVoiceGuide() {
             voiceGuideEnabled = !voiceGuideEnabled;
             const btn = document.getElementById('voice-guide-btn');
-            const icon = document.getElementById('speaker-icon');
             const text = document.getElementById('speaker-text');
 
             if (voiceGuideEnabled) {
@@ -208,16 +246,6 @@
 
             recognition.onerror = function() { stopMicUI(); };
             recognition.onend = function() { stopMicUI(); };
-        }
-
-        function speakText(text) {
-            if (voiceGuideEnabled && 'speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
-                utterance.rate = 0.95;
-                window.speechSynthesis.speak(utterance);
-            }
         }
 
         function toggleMicRecording() {
