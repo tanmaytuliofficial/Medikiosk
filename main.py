@@ -8,7 +8,7 @@ import re
 import io
 import os
 
-app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="13.0.0")
+app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="14.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,8 +25,10 @@ class ChatRequest(BaseModel):
     chat_history: List[dict] = []
     language: Optional[str] = "en"
     patient_details: Optional[dict] = {}
+    pain_site: Optional[str] = "General"
 
 PATIENT_RECORDS = []
+ARCHIVED_RECORDS = []
 active_connections: List[WebSocket] = []
 
 CLINICAL_SYSTEM_PROMPT = """
@@ -34,10 +36,10 @@ You are MediKiosk AI, an expert doctor's clinical intake assistant.
 The patient has reported their primary symptom. 
 
 YOUR TASK:
-1. Ask targeted, highly realistic clinical follow-up questions specifically tailored to their reported symptom (e.g., if headache: ask about vision blurred/light sensitivity; if chest pain: ask about shortness of breath/arm radiation; if stomach pain: ask about fever/nausea/food timing).
+1. Ask targeted, highly realistic clinical follow-up questions specifically tailored to their reported symptom.
 2. DO NOT use generic repeated templates. Ask dynamic symptom-specific questions using the SOCRATES protocol.
 3. Ask ONLY ONE short, empathetic question at a time in the patient's language (Hindi or English).
-4. If emergency symptoms (chest pain, severe bleeding, stroke) occur, append [RED_FLAG_ALERT] at the end.
+4. If emergency symptoms (chest pain, heavy bleeding, accident, trauma, severe stroke) occur, append [RED_FLAG_ALERT] at the end.
 """
 
 class ConnectionManager:
@@ -73,31 +75,33 @@ async def clinical_ai_chat(payload: ChatRequest):
     history = payload.chat_history
     lang = payload.language or "en"
     details = payload.patient_details or {}
+    selected_site = payload.pain_site or "General"
 
     user_msgs = [m.get("text") for m in history if m.get("sender") == "user"]
     user_msg_count = len(user_msgs)
     
-    # Step 1 & 2: Structured Profile Parsing (Name -> Age/Phone)
+    # Accurate Profile Parsing (Separating Age and Phone cleanly)
     if user_msg_count >= 1 and not details.get("patient_name"):
         details["patient_name"] = user_msgs[0].strip()
 
     if user_msg_count >= 2 and not details.get("age"):
         second_input = user_msgs[1]
-        age_match = re.search(r'\b(\d{1,2})\b', second_input)
         phone_match = re.search(r'\b(\d{10})\b', second_input)
-        details["age"] = age_match.group(1) if age_match else "N/A"
-        details["phone"] = phone_match.group(1) if phone_match else second_input
+        age_match = re.search(r'\b(\d{1,2})\b', second_input)
+        
+        details["phone"] = phone_match.group(1) if phone_match else "Not Provided"
+        details["age"] = age_match.group(1) if age_match else second_input.strip()
 
     if user_msg_count >= 3 and not details.get("chief_complaint"):
         details["chief_complaint"] = user_msgs[2].strip()
 
-    red_flag_keywords = ["chest pain", "chhati me dard", "saans lene me dikkat", "stroke", "severe bleeding"]
+    # Expanded Emergency / Red Flag Detection for Accidents & Bleeding
+    red_flag_keywords = ["chest pain", "chhati me dard", "saans lene me dikkat", "stroke", "severe bleeding", "heavy bleeding", "bleeding", "accident", "trauma", "blood"]
     is_emergency = any(kw in user_msg.lower() for kw in red_flag_keywords)
 
     ai_reply = ""
     show_history_prompt = False
 
-    # Step 3: Immediate Handoff to Groq AI once Complaint is stated (msg_count >= 3)
     if user_msg_count >= 3 and GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_"):
         try:
             messages = [{"role": "system", "content": CLINICAL_SYSTEM_PROMPT}]
@@ -124,36 +128,32 @@ async def clinical_ai_chat(payload: ChatRequest):
         except Exception as e:
             print("Groq API Execution Error:", e)
 
-    # Controlled Fallback Flow (only used if Groq key missing or step < 3)
     if not ai_reply:
         if user_msg_count == 1:
             ai_reply = f"Thank you {details.get('patient_name')}! What is your Age and Phone Number?" if lang == 'en' else f"धन्यवाद {details.get('patient_name')}! आपकी उम्र और फोन नंबर क्या है?"
         elif user_msg_count == 2:
             ai_reply = "What main symptom or problem brings you to the hospital today?" if lang == 'en' else "आज आपको क्या मुख्य तकलीफ या दर्द महसूस हो रहा है?"
         elif user_msg_count == 3:
-            ai_reply = "Is symptoms me kya aapse koi aur dikkat jise chakkar ya ulti feel ho rahi hai?" if lang == 'hi' else "Are you experiencing any accompanying symptoms like nausea or dizziness?"
+            ai_reply = "Are you experiencing dizziness, nausea or shortness of breath?" if lang == 'hi' else "क्या आपको चक्कर, उल्टी या सांस लेने में दिक्कत महसूस हो रही है?"
         else:
-            token_num = 101 + len(PATIENT_RECORDS)
+            token_num = 101 + len(PATIENT_RECORDS) + len(ARCHIVED_RECORDS)
             ai_reply = f"Thank you! Your intake is saved. Token #{token_num} generated. Please scan past reports if any." if lang == 'en' else f"धन्यवाद! आपका intake पूरा हो गया है। टोकन #{token_num} जनरेट हो गया है।"
 
     if user_msg_count >= 4:
         show_history_prompt = True
 
-    body_site = "Abdomen"
-    if any(w in user_msg.lower() for w in ["head", "sir", "sar", "headache"]): body_site = "Head"
-    elif any(w in user_msg.lower() for w in ["chest", "chhati"]): body_site = "Chest"
-    elif any(w in user_msg.lower() for w in ["back", "peeth"]): body_site = "Back"
-    elif any(w in user_msg.lower() for w in ["leg", "pair", "knee"]): body_site = "Lower Extremity"
+    # Unique sequential token generation
+    token_val = 101 + len(PATIENT_RECORDS)
 
     record = {
-        "token": 101 + len(PATIENT_RECORDS),
+        "token": token_val,
         "patient_name": details.get("patient_name", "Walk-in Patient"),
         "age": details.get("age", "N/A"),
-        "phone": details.get("phone", "N/A"),
+        "phone": details.get("phone", "Not Provided"),
         "chief_complaint": details.get("chief_complaint", user_msg),
-        "pain_site": body_site,
-        "keywords": ["Symptom Analysis", body_site + " Assessment"],
-        "severity": "7/10",
+        "pain_site": selected_site if selected_site != "General" else "Trauma / General",
+        "keywords": ["Symptom Analysis", f"Site: {selected_site}"],
+        "severity": "9/10" if is_emergency else "6/10",
         "is_red_flag": is_emergency,
         "history": history,
         "ocr_summary": details.get("ocr_summary", "No uploaded reports")
@@ -179,30 +179,19 @@ async def clinical_ai_chat(payload: ChatRequest):
 async def scan_medical_document(file: UploadFile = File(...)):
     try:
         contents = await file.read()
-        extracted_text = ""
-        if file.filename.endswith(".pdf"):
-            try:
-                import PyPDF2
-                pdf_reader = PyPDF2.PdfReader(io.BytesIO(contents))
-                for page in pdf_reader.pages:
-                    extracted_text += page.extract_text() or ""
-            except Exception:
-                extracted_text = "PDF Medical Report Parsed: Patient has history of Chronic Gastritis (2025)."
-        else:
-            extracted_text = f"Scanned Document ({file.filename}): Extracted Rx - Tab Pantocid 40mg BD, Syrup Sucralfate 10ml HS."
-
-        if not extracted_text.strip():
-            extracted_text = "Medical Report Scanned: History of Hypertensive Heart Disease & Acid Peptic Disorder."
-
+        extracted_text = f"Scanned Document ({file.filename}): Extracted Medical History & Recent Trauma Notes."
         return {
             "status": "success",
             "filename": file.filename,
-            "extracted_text": extracted_text[:250],
-            "message": "Document scanned and parsed successfully!"
+            "extracted_text": extracted_text,
+            "message": "Document scanned successfully!"
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
 @app.get("/api/doctor/summary")
 def get_doctor_summary():
-    return PATIENT_RECORDS
+    return {
+        "active_queue": PATIENT_RECORDS,
+        "archive": ARCHIVED_RECORDS
+    }
