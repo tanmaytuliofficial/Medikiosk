@@ -19,8 +19,15 @@
 </head>
 <body class="text-slate-900 min-h-screen flex flex-col justify-between relative overflow-x-hidden" onclick="unlockAudio()">
 
+    <!-- HEADER WITH TOP-RIGHT VOICE GUIDE ICON -->
     <header id="main-header" class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-50">
         <h1 class="text-2xl font-black text-orange-600">MediKiosk</h1>
+        
+        <!-- Voice Assistant Guide Toggle -->
+        <button id="voice-guide-btn" onclick="toggleVoiceGuide()" class="orange-card text-white p-3 rounded-full shadow-lg hover:scale-105 transition flex items-center gap-2">
+            <i data-lucide="volume-2" id="speaker-icon" class="w-5 h-5"></i>
+            <span id="speaker-text" class="text-xs font-bold px-1 hidden md:inline">Voice Guide: ON</span>
+        </button>
     </header>
 
     <div id="red-flag-banner" class="hidden bg-red-600 text-white px-6 py-4 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 animate-bounce">
@@ -60,7 +67,7 @@
             </div>
         </section>
 
-        <!-- STEP 2: VOICE CONSULTATION MODE -->
+        <!-- STEP 2: VOICE MODE -->
         <section id="voice-page" class="hidden w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
             <button onclick="goBackToWelcome()" class="text-xs text-orange-600 font-bold flex items-center gap-1"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back</button>
             <h2 class="text-2xl font-black text-slate-800">Voice Consultation Active</h2>
@@ -82,7 +89,7 @@
             </div>
         </section>
 
-        <!-- STEP 3: TEXT CHAT MODE -->
+        <!-- STEP 3: CHAT MODE -->
         <section id="chat-page" class="hidden w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <div id="chat-container" class="lg:col-span-3 bg-white border border-slate-200 rounded-3xl shadow-xl flex flex-col h-[600px] overflow-hidden transition-all duration-300">
@@ -157,6 +164,7 @@
         let audioCtx = null;
         let recognition = null;
         let isRecording = false;
+        let voiceGuideEnabled = true;
 
         function unlockAudio() {
             if (!audioCtx) {
@@ -167,7 +175,25 @@
             }
         }
 
-        // Initialize Native Free Speech Recognition Engine
+        function toggleVoiceGuide() {
+            voiceGuideEnabled = !voiceGuideEnabled;
+            const btn = document.getElementById('voice-guide-btn');
+            const icon = document.getElementById('speaker-icon');
+            const text = document.getElementById('speaker-text');
+
+            if (voiceGuideEnabled) {
+                btn.classList.remove('bg-slate-700');
+                btn.classList.add('orange-card');
+                text.innerText = "Voice Guide: ON";
+                speakText(currentLang === 'hi' ? "वॉइस गाइड चालू है" : "Voice Guide Enabled");
+            } else {
+                window.speechSynthesis.cancel();
+                btn.classList.remove('orange-card');
+                btn.classList.add('bg-slate-700');
+                text.innerText = "Voice Guide: OFF";
+            }
+        }
+
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
@@ -185,7 +211,7 @@
         }
 
         function speakText(text) {
-            if ('speechSynthesis' in window) {
+            if (voiceGuideEnabled && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
@@ -208,7 +234,7 @@
                     recognition.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
                     recognition.start();
                 } else {
-                    alert("Speech recognition is not supported in this browser. Please try Google Chrome.");
+                    alert("Speech recognition is not supported in this browser. Please try Chrome.");
                     stopMicUI();
                 }
             } else {
@@ -248,7 +274,6 @@
                 document.getElementById('voice-ai-text').innerText = `"${data.reply}"`;
                 chatMemory.push({ sender: "assistant", text: data.reply });
 
-                // Speak Response Out Loud
                 speakText(data.reply);
 
                 if (data.is_red_flag) {
@@ -256,7 +281,7 @@
                     playEmergencyAlarm();
                 }
             } catch (err) {
-                console.error("Voice Processing Error:", err);
+                console.error("Voice Error:", err);
             }
         }
 
@@ -294,6 +319,8 @@
             currentLang = lang;
             document.getElementById('lang-page').classList.add('hidden');
             document.getElementById('landing-page').classList.remove('hidden');
+            const prompt = lang === 'hi' ? 'कृपया वॉयस या टेक्स्ट कंसल्टेशन चुनें' : 'Please select Voice or Text Consultation';
+            speakText(prompt);
         }
 
         function openVoiceMode() {
@@ -329,6 +356,7 @@
                 </div>
             `;
             chatMemory.push({ sender: "assistant", text: initialMsg });
+            speakText(initialMsg);
         }
 
         function goBackToWelcome() {
@@ -428,6 +456,7 @@
                 `;
                 
                 chatMemory.push({ sender: "assistant", text: data.reply });
+                speakText(data.reply);
 
                 if (data.show_history_prompt) {
                     document.getElementById('doc-upload-box').classList.remove('hidden');

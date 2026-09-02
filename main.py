@@ -8,7 +8,7 @@ import re
 import io
 import os
 
-app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="18.0.0")
+app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="19.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,8 +31,21 @@ PATIENT_RECORDS = []
 ARCHIVED_RECORDS = []
 active_connections: List[WebSocket] = []
 
-# Global Unique Token Generator (Fixes Duplicate Token Bug)
 CURRENT_TOKEN_COUNTER = 101
+
+def clean_patient_name(raw_text: str) -> str:
+    """Strips conversational prefixes like 'my name is', 'mera naam', etc."""
+    cleaned = raw_text.strip()
+    prefixes = [
+        r"^my name is\s+", r"^i am\s+", r"^this is\s+",
+        r"^mera naam\s+", r"^naam hai\s+", r"^main\s+"
+    ]
+    for pattern in prefixes:
+        cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE)
+    
+    # Remove trailing words like 'hai'
+    cleaned = re.sub(r"\shai$", "", cleaned, flags=re.IGNORECASE).strip()
+    return cleaned.title() if cleaned else raw_text.title()
 
 CLINICAL_SYSTEM_PROMPT = """
 You are MediKiosk AI, an expert clinical intake assistant at an OPD Desk.
@@ -89,9 +102,9 @@ async def clinical_ai_chat(payload: ChatRequest):
     user_msgs = [m.get("text") for m in history if m.get("sender") == "user"]
     user_msg_count = len(user_msgs)
 
-    # 1. Profile Extraction
+    # 1. Clean Name Extraction (Removes "My name is...")
     if user_msg_count >= 1 and not details.get("patient_name"):
-        details["patient_name"] = user_msgs[0].strip()
+        details["patient_name"] = clean_patient_name(user_msgs[0])
 
     if user_msg_count >= 2 and not details.get("age"):
         second_input = user_msgs[1]
@@ -173,9 +186,8 @@ async def clinical_ai_chat(payload: ChatRequest):
     if user_msg_count >= 6 and any(w in msg_lower for w in ["yes", "haan", "ha", "pehle bhi", "past", "earlier", "doctor"]):
         show_history_prompt = True
 
-    # Unique Token Assignment Logic (Prevents Overwriting Token Numbers)
+    # Token Assignment
     existing_patient = next((r for r in PATIENT_RECORDS if r.get("patient_name") == details.get("patient_name")), None)
-    
     if existing_patient:
         assigned_token = existing_patient["token"]
     else:
