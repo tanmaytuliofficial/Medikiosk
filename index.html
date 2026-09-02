@@ -12,6 +12,9 @@
         .orange-card { background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); }
         .bubble-user { background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); }
         .bubble-ai { background: #ffffff; border: 1px solid #e2e8f0; }
+        .body-part { cursor: pointer; transition: all 0.2s; fill: #334155; stroke: #64748b; stroke-width: 1.5; }
+        .body-part:hover { fill: #f97316; }
+        .body-part.active { fill: #ef4444 !important; stroke: #b91c1c !important; }
     </style>
 </head>
 <body class="text-slate-900 min-h-screen flex flex-col justify-between relative overflow-x-hidden">
@@ -42,19 +45,17 @@
             </div>
         </section>
 
-        <!-- STEP 1: CONSULTATION SELECTION -->
+        <!-- STEP 1: CONSULTATION MODE -->
         <section id="landing-page" class="hidden w-full text-center space-y-8 my-auto max-w-2xl">
-            <h1 id="welcome-heading" class="text-4xl font-black text-orange-600">Welcome To MediKiosk</h1>
+            <h1 class="text-4xl font-black text-orange-600">Welcome To MediKiosk</h1>
             <div class="grid grid-cols-2 gap-6 pt-2">
                 <button onclick="openVoiceMode()" class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2">
                     <i data-lucide="mic" class="w-8 h-8 mx-auto"></i>
                     <div>Voice Consultation</div>
-                    <span class="text-xs bg-white text-orange-700 px-3 py-1 rounded-full font-semibold">Hands-Free Intake</span>
                 </button>
                 <button onclick="openChatMode()" class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2">
                     <i data-lucide="message-square" class="w-8 h-8 mx-auto"></i>
                     <div>Text Consultation</div>
-                    <span class="text-xs bg-white text-orange-700 px-3 py-1 rounded-full font-semibold">Interactive Kiosk</span>
                 </button>
             </div>
         </section>
@@ -68,16 +69,16 @@
                 <span id="mic-status" class="text-[10px] font-bold mt-1">Tap Mic</span>
             </button>
             <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left">
-                <p id="voice-user-text" class="text-slate-700 font-semibold italic text-sm">"Tap mic and speak your name..."</p>
+                <p id="voice-user-text" class="text-slate-700 font-semibold italic text-sm">"Tap mic and speak..."</p>
                 <p id="voice-ai-text" class="text-orange-600 font-bold text-sm mt-2">"Waiting..."</p>
             </div>
         </section>
 
-        <!-- STEP 3: MAIN INTAKE + SIDE BODY SILHOUETTE MAP -->
+        <!-- STEP 3: MAIN CHAT + HIDDEN UNTIL 3 MANDATORY QUESTIONS BODY PANEL -->
         <section id="chat-page" class="hidden w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <!-- Chat Intake Form (Cols 2) -->
-            <div class="lg:col-span-2 bg-white border border-slate-200 rounded-3xl shadow-xl flex flex-col h-[600px] overflow-hidden">
+            <!-- Chat Intake Form -->
+            <div id="chat-container" class="lg:col-span-3 bg-white border border-slate-200 rounded-3xl shadow-xl flex flex-col h-[600px] overflow-hidden transition-all duration-300">
                 <div class="bg-slate-900 text-white p-4 px-6 flex justify-between items-center">
                     <div class="flex items-center space-x-3">
                         <button onclick="goBackToWelcome()" class="text-slate-400 hover:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
@@ -90,10 +91,11 @@
 
                 <div id="chat-box" class="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50"></div>
 
+                <!-- Past Report Scan Box (Triggered only after Poll) -->
                 <div id="doc-upload-box" class="hidden bg-orange-50 p-3 border-t border-orange-200 flex items-center justify-between px-6">
-                    <span class="text-xs text-orange-800 font-semibold">Have past prescription/report?</span>
+                    <span class="text-xs text-orange-800 font-semibold">Have past medical prescription or report?</span>
                     <label class="bg-orange-600 text-white text-xs font-bold px-4 py-2 rounded-xl cursor-pointer">
-                        📄 Scan Document
+                        📄 Scan Report
                         <input type="file" id="ocr-file-input" onchange="handleDocUpload()" class="hidden">
                     </label>
                 </div>
@@ -106,24 +108,33 @@
                 </div>
             </div>
 
-            <!-- SIDE BODY MAP PANEL (Shown only after profile intake) -->
-            <div id="side-body-panel" class="hidden lg:flex bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex-col justify-between space-y-4 shadow-xl">
-                <div>
-                    <h3 class="text-base font-black text-white">Interactive Body Map</h3>
-                    <p class="text-xs text-slate-400">Click affected body area for doctor mapping:</p>
+            <!-- VISUAL BODY SILHOUETTE MAP (HIDDEN INITIALLY) -->
+            <div id="side-body-panel" class="hidden lg:flex bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex-col items-center justify-between space-y-4 shadow-xl">
+                <div class="text-center">
+                    <h3 class="text-sm font-black text-white">Interactive Body Silhouette</h3>
+                    <p class="text-[11px] text-slate-400">Tap affected area to mark pain site</p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-2">
-                    <button onclick="selectPainSite('Head')" class="bg-slate-800 hover:bg-orange-600 text-left px-4 py-3 rounded-2xl font-bold text-xs border border-slate-700 transition">🧠 Head / Skull</button>
-                    <button onclick="selectPainSite('Chest')" class="bg-slate-800 hover:bg-orange-600 text-left px-4 py-3 rounded-2xl font-bold text-xs border border-slate-700 transition">❤️ Chest / Cardiac</button>
-                    <button onclick="selectPainSite('Abdomen')" class="bg-slate-800 hover:bg-orange-600 text-left px-4 py-3 rounded-2xl font-bold text-xs border border-slate-700 transition">🫄 Abdomen / Stomach</button>
-                    <button onclick="selectPainSite('Back')" class="bg-slate-800 hover:bg-orange-600 text-left px-4 py-3 rounded-2xl font-bold text-xs border border-slate-700 transition">🔙 Back / Spine</button>
-                    <button onclick="selectPainSite('Limbs/Accident')" class="bg-slate-800 hover:bg-orange-600 text-left px-4 py-3 rounded-2xl font-bold text-xs border border-slate-700 transition">🦵 Limbs / Joint Pain</button>
+                <!-- SVG Human Body Diagram -->
+                <div class="relative w-40 h-80 flex justify-center items-center">
+                    <svg viewBox="0 0 100 200" class="w-full h-full">
+                        <!-- Head -->
+                        <circle id="part-head" onclick="highlightPart('Head', this)" class="body-part" cx="50" cy="20" r="14" />
+                        <!-- Chest -->
+                        <path id="part-chest" onclick="highlightPart('Chest', this)" class="body-part" d="M32,38 L68,38 L65,75 L35,75 Z" />
+                        <!-- Abdomen -->
+                        <path id="part-abdomen" onclick="highlightPart('Abdomen', this)" class="body-part" d="M35,77 L65,77 L60,115 L40,115 Z" />
+                        <!-- Limbs (Arms & Legs) -->
+                        <rect id="part-arm-left" onclick="highlightPart('Limbs', this)" class="body-part" x="16" y="38" width="12" height="70" rx="6" />
+                        <rect id="part-arm-right" onclick="highlightPart('Limbs', this)" class="body-part" x="72" y="38" width="12" height="70" rx="6" />
+                        <rect id="part-leg-left" onclick="highlightPart('Limbs', this)" class="body-part" x="32" y="118" width="15" height="75" rx="7" />
+                        <rect id="part-leg-right" onclick="highlightPart('Limbs', this)" class="body-part" x="53" y="118" width="15" height="75" rx="7" />
+                    </svg>
                 </div>
 
-                <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-center">
-                    <span class="text-[10px] text-slate-500 uppercase font-bold">Selected Site:</span>
-                    <p id="selected-site-tag" class="text-xs font-bold text-orange-400 mt-0.5">General Intake</p>
+                <div class="bg-slate-950 p-2.5 rounded-2xl border border-slate-800 text-center w-full">
+                    <span class="text-[10px] text-slate-500 uppercase font-bold">Selected Region:</span>
+                    <p id="selected-site-tag" class="text-xs font-bold text-orange-400">General</p>
                 </div>
             </div>
 
@@ -147,6 +158,7 @@
         const landingPage = document.getElementById('landing-page');
         const voicePage = document.getElementById('voice-page');
         const chatPage = document.getElementById('chat-page');
+        const chatContainer = document.getElementById('chat-container');
         const sideBodyPanel = document.getElementById('side-body-panel');
         const redFlagBanner = document.getElementById('red-flag-banner');
 
@@ -191,16 +203,31 @@
             redFlagBanner.classList.add('hidden');
         }
 
-        function selectPainSite(site) {
-            selectedPainSite = site;
-            document.getElementById('selected-site-tag').innerText = site;
+        function highlightPart(siteName, element) {
+            document.querySelectorAll('.body-part').forEach(el => el.classList.remove('active'));
+            if (element) element.classList.add('active');
+            
+            selectedPainSite = siteName;
+            document.getElementById('selected-site-tag').innerText = siteName;
+            
             const chatBox = document.getElementById('chat-box');
             chatBox.innerHTML += `
                 <div class="flex items-start justify-end space-x-3">
-                    <div class="bubble-user text-white p-3 rounded-2xl text-xs font-medium">📍 Pain Location Selected: ${site}</div>
+                    <div class="bubble-user text-white p-2.5 rounded-2xl text-xs font-medium">📍 Pain Site Marked: ${siteName}</div>
                 </div>
             `;
             chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function autoSelectBodyPart(siteName) {
+            selectedPainSite = siteName;
+            document.getElementById('selected-site-tag').innerText = siteName;
+            
+            document.querySelectorAll('.body-part').forEach(el => el.classList.remove('active'));
+            if (siteName === "Head") document.getElementById('part-head')?.classList.add('active');
+            if (siteName === "Chest") document.getElementById('part-chest')?.classList.add('active');
+            if (siteName === "Abdomen") document.getElementById('part-abdomen')?.classList.add('active');
+            if (siteName === "Limbs") document.getElementById('part-leg-left')?.classList.add('active');
         }
 
         async function handleChatSubmit(e) {
@@ -210,7 +237,7 @@
             const userMsg = input.value.trim();
             if (!userMsg) return;
 
-            // Strict Validation for Step 2 (Phone Number Validation)
+            // Strict 10-digit Phone Validation on Step 2
             if (stepIndex === 2) {
                 const phoneMatch = userMsg.match(/\b\d{10}\b/);
                 if (!phoneMatch) {
@@ -246,9 +273,15 @@
                 patientDetails = data.patient_details;
                 stepIndex++;
 
-                // Reveal Side Body Map Panel only after Step 2 completion
-                if (stepIndex >= 3) {
+                // Un-hide Body Map Panel ONLY after 3 mandatory questions completed
+                if (stepIndex >= 4) {
+                    chatContainer.classList.remove('lg:col-span-3');
+                    chatContainer.classList.add('lg:col-span-2');
                     sideBodyPanel.classList.remove('hidden');
+                }
+
+                if (data.detected_site && data.detected_site !== "General") {
+                    autoSelectBodyPart(data.detected_site);
                 }
 
                 chatBox.innerHTML += `
