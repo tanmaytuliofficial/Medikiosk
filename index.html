@@ -54,24 +54,59 @@
             </div>
         </section>
 
-        <!-- STEP 1: CONSULTATION SELECTION -->
+        <!-- STEP 1: CONSULTATION MODE SELECTION (Voice + Text Restored) -->
         <section id="landing-page" class="hidden w-full text-center space-y-8 my-auto">
             <div class="space-y-2">
                 <span class="bg-orange-100 text-orange-700 font-extrabold text-xs px-4 py-1.5 rounded-full border border-orange-200">Self Check-In</span>
                 <h1 id="welcome-heading" class="text-4xl md:text-5xl font-black text-orange-600 tracking-tight pt-2">Welcome To The Hospital</h1>
-                <p id="welcome-subtext" class="text-slate-500 text-sm max-w-lg mx-auto">Select your intake mode below.</p>
+                <p id="welcome-subtext" class="text-slate-500 text-sm max-w-lg mx-auto">Select your preferred intake mode below.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto pt-2">
-                <button onclick="openChatMode()" class="orange-card col-span-full text-white p-8 rounded-3xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] transition duration-300 flex flex-col items-center space-y-4">
+                <!-- Voice Consultation Button -->
+                <button onclick="openVoiceMode()" class="orange-card text-white p-8 rounded-3xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] transition duration-300 flex flex-col items-center space-y-4">
+                    <div class="bg-white/20 p-4 rounded-2xl backdrop-blur-md"><i data-lucide="mic" class="w-8 h-8"></i></div>
+                    <h2 id="btn-voice-title" class="text-xl font-bold">Voice Consultation</h2>
+                    <span id="btn-voice-tag" class="bg-white text-orange-700 text-xs font-bold px-4 py-1.5 rounded-full">Speak 🗣️ (Best for Vomiting/Emergency)</span>
+                </button>
+
+                <!-- Text Consultation Button -->
+                <button onclick="openChatMode()" class="orange-card text-white p-8 rounded-3xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] transition duration-300 flex flex-col items-center space-y-4">
                     <div class="bg-white/20 p-4 rounded-2xl backdrop-blur-md"><i data-lucide="message-square" class="w-8 h-8"></i></div>
-                    <h2 id="btn-chat-title" class="text-xl font-bold">Start Clinical Consultation</h2>
-                    <span id="btn-chat-tag" class="bg-white text-orange-700 text-xs font-bold px-4 py-1.5 rounded-full">Touch Kiosk 💬</span>
+                    <h2 id="btn-chat-title" class="text-xl font-bold">Text Consultation</h2>
+                    <span id="btn-chat-tag" class="bg-white text-orange-700 text-xs font-bold px-4 py-1.5 rounded-full">Type 💬</span>
                 </button>
             </div>
         </section>
 
-        <!-- STEP 2: CHAT CONSULTATION MODE -->
+        <!-- STEP 2A: VOICE MODE -->
+        <section id="voice-page" class="hidden w-full max-w-xl bg-white border border-slate-200/80 rounded-3xl p-8 shadow-xl text-center space-y-6">
+            <button onclick="goBackToWelcome()" class="text-xs text-orange-600 font-bold flex items-center gap-1 hover:underline">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
+            </button>
+            <div class="space-y-1">
+                <h2 class="text-2xl font-black text-slate-800">Voice Consultation Active</h2>
+                <p class="text-xs text-slate-400">Speak naturally (e.g., "Ulti aur pet mein dard hai")</p>
+            </div>
+            
+            <button id="mic-btn" onclick="toggleMicRecording()" class="w-32 h-32 orange-card text-white rounded-full flex flex-col items-center justify-center mx-auto shadow-xl shadow-orange-500/30 hover:scale-105 transition duration-300">
+                <i data-lucide="mic" class="w-12 h-12"></i>
+                <span id="mic-status" class="text-[10px] font-bold mt-1 uppercase tracking-wider">Tap Mic</span>
+            </button>
+
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 text-left space-y-2">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">You Said (Transcript):</p>
+                    <p id="voice-user-text" class="text-slate-700 font-semibold italic text-sm mt-0.5">"Tap microphone and speak..."</p>
+                </div>
+                <div class="border-t border-slate-200 pt-2">
+                    <p class="text-[10px] font-bold text-orange-500 uppercase">AI Doctor Response:</p>
+                    <p id="voice-ai-text" class="text-orange-950 font-bold text-sm mt-0.5">"Waiting for your response..."</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 2B: CHAT CONSULTATION MODE -->
         <section id="chat-page" class="hidden w-full max-w-2xl bg-white border border-slate-200/80 rounded-3xl shadow-xl flex flex-col h-[580px] overflow-hidden">
             <div class="bg-slate-900 text-white p-4 px-6 flex justify-between items-center">
                 <div class="flex items-center space-x-3">
@@ -84,15 +119,15 @@
                 </div>
             </div>
 
-            <!-- Interactive Body Silhouette / Pain Selector Bar -->
-            <div id="body-selector-box" class="bg-slate-100 p-3 border-b border-slate-200 flex flex-wrap items-center justify-between px-6 gap-2">
+            <!-- Interactive Pain Area Selector Bar -->
+            <div class="bg-slate-100 p-3 border-b border-slate-200 flex flex-wrap items-center justify-between px-6 gap-2">
                 <span class="text-xs text-slate-700 font-bold">Select Pain/Injury Area:</span>
                 <div class="flex flex-wrap gap-1.5">
                     <button onclick="selectPainSite('Head')" class="bg-white hover:bg-orange-500 hover:text-white text-slate-800 text-[11px] font-bold px-3 py-1 rounded-xl border border-slate-300 transition">🧠 Head</button>
                     <button onclick="selectPainSite('Chest')" class="bg-white hover:bg-orange-500 hover:text-white text-slate-800 text-[11px] font-bold px-3 py-1 rounded-xl border border-slate-300 transition">❤️ Chest</button>
-                    <button onclick="selectPainSite('Abdomen')" class="bg-white hover:bg-orange-500 hover:text-white text-slate-800 text-[11px] font-bold px-3 py-1 rounded-xl border border-slate-300 transition">🫄 Abdomen</button>
+                    <button onclick="selectPainSite('Abdomen / Vomiting')" class="bg-white hover:bg-orange-500 hover:text-white text-slate-800 text-[11px] font-bold px-3 py-1 rounded-xl border border-slate-300 transition">🫄 Abdomen / Vomiting</button>
                     <button onclick="selectPainSite('Back')" class="bg-white hover:bg-orange-500 hover:text-white text-slate-800 text-[11px] font-bold px-3 py-1 rounded-xl border border-slate-300 transition">🔙 Back</button>
-                    <button onclick="selectPainSite('Limbs/Accident Trauma')" class="bg-white hover:bg-orange-500 hover:text-white text-slate-800 text-[11px] font-bold px-3 py-1 rounded-xl border border-slate-300 transition">🦵 Limbs/Accident</button>
+                    <button onclick="selectPainSite('Limbs/Accident')" class="bg-white hover:bg-orange-500 hover:text-white text-slate-800 text-[11px] font-bold px-3 py-1 rounded-xl border border-slate-300 transition">🦵 Limbs/Accident</button>
                 </div>
             </div>
 
@@ -110,7 +145,7 @@
 
             <div class="p-4 bg-white border-t border-slate-100">
                 <form id="chat-form" onsubmit="handleChatSubmit(event)" class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 focus-within:border-orange-500">
-                    <input type="text" id="chat-input" placeholder="Type response here..." required class="flex-1 bg-transparent px-4 py-2 text-sm text-slate-800 focus:outline-none">
+                    <input type="text" id="chat-input" placeholder="Type response here (e.g. Ulti ho rahi hai)..." required class="flex-1 bg-transparent px-4 py-2 text-sm text-slate-800 focus:outline-none">
                     <button type="submit" class="orange-card text-white p-3 rounded-xl font-bold shadow-md shadow-orange-500/20"><i data-lucide="send" class="w-4 h-4"></i></button>
                 </form>
             </div>
@@ -130,17 +165,83 @@
         let chatMemory = [];
         let patientDetails = {};
         let selectedPainSite = "General";
+        let isRecording = false;
+        let recognition = null;
 
         const langPage = document.getElementById('lang-page');
         const landingPage = document.getElementById('landing-page');
+        const voicePage = document.getElementById('voice-page');
         const chatPage = document.getElementById('chat-page');
         const redFlagBanner = document.getElementById('red-flag-banner');
         const docUploadBox = document.getElementById('doc-upload-box');
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('voice-user-text').innerText = `"${transcript}"`;
+                processVoiceInput(transcript);
+            };
+            recognition.onerror = function() { stopMicUI(); };
+            recognition.onend = function() { stopMicUI(); };
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
+                utterance.rate = 0.95;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
 
         function selectLanguage(lang) {
             currentLang = lang;
             langPage.classList.add('hidden');
             landingPage.classList.remove('hidden');
+        }
+
+        function openVoiceMode() {
+            landingPage.classList.add('hidden');
+            voicePage.classList.remove('hidden');
+            chatMemory = [];
+            patientDetails = {};
+            const welcomeText = currentLang === 'hi' ? "नमस्ते! कृपया अपना पूरा नाम बताएं?" : "Welcome! Please state your Full Name.";
+            document.getElementById('voice-ai-text').innerText = `"${welcomeText}"`;
+            speakText(welcomeText);
+        }
+
+        function openChatMode() {
+            landingPage.classList.add('hidden');
+            chatPage.classList.remove('hidden');
+            chatMemory = [];
+            patientDetails = {};
+
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML = '';
+            const initialMsg = currentLang === 'hi' ? "नमस्ते! मैं मेडिकियोस्क सहायक हूँ। कृपया अपना पूरा नाम बताएं?" : "Welcome! I am MediKiosk Assistant. Could you please state your Full Name?";
+            chatBox.innerHTML = `
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black shadow-sm flex-shrink-0">AI</div>
+                    <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-sm font-medium leading-relaxed">${initialMsg}</div>
+                </div>
+            `;
+            chatMemory.push({ sender: "assistant", text: initialMsg });
+        }
+
+        function goBackToWelcome() {
+            if (recognition && isRecording) recognition.stop();
+            window.speechSynthesis.cancel();
+            voicePage.classList.add('hidden');
+            chatPage.classList.add('hidden');
+            landingPage.classList.remove('hidden');
+            redFlagBanner.classList.add('hidden');
+            docUploadBox.classList.add('hidden');
         }
 
         function selectPainSite(site) {
@@ -154,33 +255,60 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        function openChatMode() {
-            landingPage.classList.add('hidden');
-            chatPage.classList.remove('hidden');
-            chatMemory = [];
-            patientDetails = {};
+        function toggleMicRecording() {
+            const micBtn = document.getElementById('mic-btn');
+            const micStatus = document.getElementById('mic-status');
 
-            const chatBox = document.getElementById('chat-box');
-            chatBox.innerHTML = '';
-            
-            const initialMsg = currentLang === 'hi'
-                ? "नमस्ते! मैं मेडिकियोस्क सहायक हूँ। कृपया अपना पूरा नाम बताएं?"
-                : "Welcome! I am MediKiosk Assistant. Could you please state your Full Name?";
-            
-            chatBox.innerHTML = `
-                <div class="flex items-start space-x-3">
-                    <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black shadow-sm flex-shrink-0">AI</div>
-                    <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-sm font-medium leading-relaxed">${initialMsg}</div>
-                </div>
-            `;
-            chatMemory.push({ sender: "assistant", text: initialMsg });
+            if (!isRecording) {
+                isRecording = true;
+                micBtn.classList.add('animate-pulse');
+                micStatus.innerText = "Listening...";
+                if (recognition) {
+                    recognition.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
+                    recognition.start();
+                } else {
+                    setTimeout(() => {
+                        const sampleMsg = "Ulti aur pet mein dard hai";
+                        document.getElementById('voice-user-text').innerText = `"${sampleMsg}"`;
+                        processVoiceInput(sampleMsg);
+                        stopMicUI();
+                    }, 2000);
+                }
+            } else {
+                if (recognition) recognition.stop();
+                stopMicUI();
+            }
         }
 
-        function goBackToWelcome() {
-            chatPage.classList.add('hidden');
-            landingPage.classList.remove('hidden');
-            redFlagBanner.classList.add('hidden');
-            docUploadBox.classList.add('hidden');
+        function stopMicUI() {
+            isRecording = false;
+            const micBtn = document.getElementById('mic-btn');
+            const micStatus = document.getElementById('mic-status');
+            micBtn.classList.remove('animate-pulse');
+            micStatus.innerText = "Tap Mic";
+        }
+
+        async function processVoiceInput(userMsg) {
+            chatMemory.push({ sender: "user", text: userMsg });
+            try {
+                const res = await fetch(`${BASE_API_URL}/api/chat/ai-assistant`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_message: userMsg,
+                        chat_history: chatMemory,
+                        language: currentLang,
+                        patient_details: patientDetails,
+                        pain_site: selectedPainSite
+                    })
+                });
+                const data = await res.json();
+                patientDetails = data.patient_details;
+                document.getElementById('voice-ai-text').innerText = `"${data.reply}"`;
+                chatMemory.push({ sender: "assistant", text: data.reply });
+                speakText(data.reply);
+                if (data.is_red_flag) redFlagBanner.classList.remove('hidden');
+            } catch (err) { console.error("Voice Error", err); }
         }
 
         function playEmergencyAlarm() {
@@ -194,35 +322,28 @@
                 gain.connect(ctx.destination);
                 osc.start();
                 setTimeout(() => { osc.stop(); }, 1200);
-            } catch(e) { console.error("Audio beep error", e); }
+            } catch(e) { console.error("Audio error", e); }
         }
 
         async function handleDocUpload() {
             const fileInput = document.getElementById('ocr-file-input');
             if (!fileInput.files.length) return;
-
             const chatBox = document.getElementById('chat-box');
             chatBox.innerHTML += `
                 <div class="flex items-start justify-end space-x-3">
                     <div class="bubble-user text-white p-3 rounded-2xl text-xs max-w-sm font-medium">📄 Uploading & Scanning Document: ${fileInput.files[0].name}</div>
                 </div>
             `;
-
             const formData = new FormData();
             formData.append("file", fileInput.files[0]);
-
             try {
-                const res = await fetch(`${BASE_API_URL}/api/ocr/scan-document`, {
-                    method: 'POST',
-                    body: formData
-                });
+                const res = await fetch(`${BASE_API_URL}/api/ocr/scan-document`, { method: 'POST', body: formData });
                 const data = await res.json();
-
                 chatBox.innerHTML += `
                     <div class="flex items-start space-x-3">
                         <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black shadow-sm flex-shrink-0">AI</div>
                         <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-sm font-medium leading-relaxed">
-                            ✅ <b>OCR Extracted Report:</b><br>${data.extracted_text}<br><br><b>Token Generated!</b> You will be called to Consultation Desk soon.
+                            ✅ <b>OCR Extracted Report:</b><br>${data.extracted_text}<br><br><b>Token Generated!</b> Proceed to Desk.
                         </div>
                     </div>
                 `;
@@ -243,7 +364,6 @@
                     <div class="bubble-user text-white p-4 rounded-2xl rounded-tr-none text-xs max-w-sm shadow-md font-medium leading-relaxed">${userMsg}</div>
                 </div>
             `;
-
             chatMemory.push({ sender: "user", text: userMsg });
             input.value = "";
             chatBox.scrollTop = chatBox.scrollHeight;
@@ -260,7 +380,6 @@
                         pain_site: selectedPainSite
                     })
                 });
-
                 const data = await res.json();
                 patientDetails = data.patient_details;
 
@@ -270,24 +389,16 @@
                         <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-sm font-medium leading-relaxed">${data.reply}</div>
                     </div>
                 `;
-                
                 chatMemory.push({ sender: "assistant", text: data.reply });
 
-                if (data.show_history_prompt) {
-                    docUploadBox.classList.remove('hidden');
-                }
-
+                if (data.show_history_prompt) docUploadBox.classList.remove('hidden');
                 if (data.is_red_flag) {
                     redFlagBanner.classList.remove('hidden');
                     playEmergencyAlarm();
                 }
-
                 chatBox.scrollTop = chatBox.scrollHeight;
-
-            } catch (err) {
-                console.error("Connection Error", err);
-            }
+            } catch (err) { console.error("Error", err); }
         }
     </script>
 </body>
-</html>
+</html> 
