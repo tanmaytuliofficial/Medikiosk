@@ -44,6 +44,15 @@
             fill: #ef4444 !important;
             stroke: #b91c1c !important;
         }
+
+        .poll-btn {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .poll-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.2);
+        }
     </style>
 </head>
 
@@ -64,14 +73,14 @@
     <div id="red-flag-banner"
         class="hidden bg-red-600 text-white px-6 py-4 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 animate-bounce">
         <div class="flex items-center space-x-4">
-            <i data-lucide="alert-circle" class="w-7 h-7"></i>
+            <i data-lucide="alert-circle" class="w-8 h-8"></i>
             <div>
-                <h3 class="font-extrabold">🚨 EMERGENCY CRITICAL ALERT DETECTED</h3>
-                <p class="text-xs text-red-100">Medical team & Triage staff notified immediately!</p>
+                <h3 class="font-extrabold text-base">🚨 CRITICAL EMERGENCY RED-FLAG DETECTED</h3>
+                <p class="text-xs text-red-100">Intake terminated immediately. Priority OPD desk notified!</p>
             </div>
         </div>
-        <span class="bg-white text-red-600 font-bold px-4 py-1.5 rounded-xl text-xs uppercase tracking-wider">PRIORITY
-            1</span>
+        <span class="bg-white text-red-600 font-black px-4 py-2 rounded-xl text-xs uppercase tracking-wider">PRIORITY 1
+            EMERGENCY</span>
     </div>
 
     <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex justify-center items-center">
@@ -143,11 +152,10 @@
                                 data-lucide="arrow-left" class="w-5 h-5"></i></button>
                         <div>
                             <h3 class="font-bold text-sm text-white">MediKiosk Assistant</h3>
-                            <p class="text-[11px] text-orange-400">Clinical Triage Desk</p>
+                            <p class="text-[11px] text-orange-400">Online</p>
                         </div>
                     </div>
 
-                    <!-- TOKEN NUMBER BADGE IN TOP BAR -->
                     <div id="patient-token-badge"
                         class="hidden bg-orange-500/20 border border-orange-500/50 px-3 py-1 rounded-xl text-right">
                         <span class="text-[9px] text-orange-300 font-bold block uppercase">Your OPD Token</span>
@@ -166,7 +174,7 @@
                     </label>
                 </div>
 
-                <div class="p-4 bg-white border-t border-slate-100">
+                <div id="chat-input-area" class="p-4 bg-white border-t border-slate-100">
                     <form id="chat-form" onsubmit="handleChatSubmit(event)"
                         class="flex items-center gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200">
                         <input type="text" id="chat-input" placeholder="Type here..." required
@@ -294,6 +302,40 @@
             }
         }
 
+        // 🚨 MINIMUM 5 SECONDS NON-STOP EMERGENCY ALARM
+        function trigger5SecEmergencyAlarm() {
+            unlockAudio();
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const startTime = audioCtx.currentTime;
+                const duration = 5.0; // 5 Seconds Minimum Alarm
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'sawtooth';
+
+                // High pitch oscillating ambulance frequency pattern over 5s
+                for (let t = 0; t < duration; t += 0.4) {
+                    osc.frequency.setValueAtTime(880, startTime + t);
+                    osc.frequency.setValueAtTime(1200, startTime + t + 0.2);
+                }
+
+                gain.gain.setValueAtTime(0.9, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            } catch (e) {
+                console.error("Audio playback error:", e);
+            }
+        }
+
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
@@ -373,39 +415,10 @@
 
                 if (data.is_red_flag) {
                     document.getElementById('red-flag-banner').classList.remove('hidden');
-                    playEmergencyAlarm();
+                    trigger5SecEmergencyAlarm();
                 }
             } catch (err) {
                 console.error("Voice Error:", err);
-            }
-        }
-
-        function playEmergencyAlarm() {
-            unlockAudio();
-            try {
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-
-                const now = audioCtx.currentTime;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(880, now);
-                osc.frequency.setValueAtTime(1200, now + 0.2);
-                osc.frequency.setValueAtTime(880, now + 0.4);
-                osc.frequency.setValueAtTime(1200, now + 0.6);
-
-                gain.gain.setValueAtTime(0.8, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-
-                osc.start(now);
-                osc.stop(now + 0.8);
-            } catch (e) {
-                console.error("Audio playback error:", e);
             }
         }
 
@@ -462,44 +475,23 @@
             document.getElementById('landing-page').classList.remove('hidden');
             document.getElementById('red-flag-banner').classList.add('hidden');
             document.getElementById('patient-token-badge').classList.add('hidden');
+            document.getElementById('chat-input-area').classList.remove('hidden');
         }
 
-        function highlightPart(siteName, element) {
-            document.querySelectorAll('.body-part').forEach(el => el.classList.remove('active'));
-            if (element) element.classList.add('active');
-
-            selectedPainSite = siteName;
-            document.getElementById('selected-site-tag').innerText = siteName;
-
-            const chatBox = document.getElementById('chat-box');
-            chatBox.innerHTML += `
-                <div class="flex items-start justify-end space-x-3">
-                    <div class="bubble-user text-white p-2.5 rounded-2xl text-xs font-medium">📍 Pain Site Marked: ${siteName}</div>
-                </div>
-            `;
-            chatBox.scrollTop = chatBox.scrollHeight;
+        function submitPollSelection(selectedVal) {
+            handleChatSubmit(null, selectedVal);
         }
 
-        function autoSelectBodyPart(siteName) {
-            selectedPainSite = siteName;
-            document.getElementById('selected-site-tag').innerText = siteName;
-
-            document.querySelectorAll('.body-part').forEach(el => el.classList.remove('active'));
-            if (siteName === "Head") document.getElementById('part-head')?.classList.add('active');
-            if (siteName === "Chest") document.getElementById('part-chest')?.classList.add('active');
-            if (siteName === "Abdomen") document.getElementById('part-abdomen')?.classList.add('active');
-            if (siteName === "Limbs") document.getElementById('part-leg-left')?.classList.add('active');
-        }
-
-        async function handleChatSubmit(e) {
-            e.preventDefault();
+        async function handleChatSubmit(e, overrideMsg = null) {
+            if (e) e.preventDefault();
             unlockAudio();
+
             const input = document.getElementById('chat-input');
             const chatBox = document.getElementById('chat-box');
-            const userMsg = input.value.trim();
+            const userMsg = overrideMsg ? overrideMsg : input.value.trim();
             if (!userMsg) return;
 
-            if (stepIndex === 3) {
+            if (stepIndex === 3 && !overrideMsg) {
                 const phoneMatch = userMsg.match(/\b\d{10}\b/);
                 if (!phoneMatch) {
                     alert(currentLang === 'hi' ? 'कृपया सही 10 अंकों का फोन नंबर दर्ज करें।' : 'Please enter a valid 10-digit Phone Number.');
@@ -514,7 +506,7 @@
             `;
 
             chatMemory.push({ sender: "user", text: userMsg });
-            input.value = "";
+            if (!overrideMsg) input.value = "";
             chatBox.scrollTop = chatBox.scrollHeight;
 
             try {
@@ -549,6 +541,7 @@
                     autoSelectBodyPart(data.detected_site);
                 }
 
+                // Append AI Response Bubble
                 chatBox.innerHTML += `
                     <div class="flex items-start space-x-3">
                         <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black shadow-sm flex-shrink-0">AI</div>
@@ -556,7 +549,35 @@
                     </div>
                 `;
 
-                if (data.reply.includes("Token generated") || data.reply.includes("टोकन जनरेट")) {
+                // Render Clickable Poll Option Cards if available
+                if (data.poll_options && data.poll_options.length > 0) {
+                    let pollHtml = `<div class="grid grid-cols-2 gap-3 my-2 pl-11 max-w-md">`;
+                    data.poll_options.forEach(opt => {
+                        pollHtml += `
+                            <button onclick="submitPollSelection('${opt.value}')" class="poll-btn bg-white border-2 border-orange-200 text-orange-950 font-bold p-3 rounded-2xl text-xs text-center shadow-sm hover:border-orange-500 hover:bg-orange-50">
+                                ${opt.label}
+                            </button>
+                        `;
+                    });
+                    pollHtml += `</div>`;
+                    chatBox.innerHTML += pollHtml;
+                }
+
+                // 🚨 Emergency RED FLAG Trigger Logic (End Intake & Big Token Card)
+                if (data.is_red_flag) {
+                    document.getElementById('red-flag-banner').classList.remove('hidden');
+                    document.getElementById('chat-input-area').classList.add('hidden'); // Kill input field
+                    trigger5SecEmergencyAlarm();
+
+                    chatBox.innerHTML += `
+                        <div class="bg-red-600 text-white p-6 rounded-3xl shadow-2xl text-center my-4 space-y-2 border-2 border-red-300 animate-pulse">
+                            <span class="bg-white text-red-700 font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">PRIORITY EMERGENCY TOKEN</span>
+                            <h2 class="text-4xl font-black">OPD TOKEN #${data.assigned_token}</h2>
+                            <p class="text-xs text-red-100 font-bold">PLEASE PROCEED DIRECTLY TO TRIAGE ROOM #01 IMMEDIATELY!</p>
+                        </div>
+                    `;
+                }
+                else if (data.reply.includes("Token generated") || data.reply.includes("टोकन जनरेट")) {
                     chatBox.innerHTML += `
                         <div class="orange-card text-white p-6 rounded-3xl shadow-xl text-center my-4 space-y-2 border border-orange-400">
                             <span class="bg-white text-orange-700 font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">CHECK-IN CONFIRMED</span>
@@ -568,15 +589,6 @@
 
                 chatMemory.push({ sender: "assistant", text: data.reply });
                 speakText(data.reply);
-
-                if (data.show_history_prompt) {
-                    document.getElementById('doc-upload-box').classList.remove('hidden');
-                }
-
-                if (data.is_red_flag) {
-                    document.getElementById('red-flag-banner').classList.remove('hidden');
-                    playEmergencyAlarm();
-                }
 
                 chatBox.scrollTop = chatBox.scrollHeight;
 

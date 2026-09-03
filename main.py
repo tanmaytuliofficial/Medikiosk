@@ -8,7 +8,7 @@ import re
 import io
 import os
 
-app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="20.0.0")
+app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="22.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -49,14 +49,8 @@ You are MediKiosk AI, an expert clinical intake assistant at an OPD Desk.
 
 RULES:
 1. Respond strictly in {lang}.
-2. Conduct an IN-DEPTH medical assessment asking thorough clinical follow-up questions one by one using the SOCRATES protocol:
-   - Nature/character of pain
-   - Radiation to other areas
-   - Aggravating/relieving factors
-   - Associated symptoms (fever, nausea, vomiting, dizziness)
-   - Past medical history
-3. Ask ONLY ONE short, professional question at a time.
-4. If emergency red-flag symptoms occur (severe chest pain, heavy bleeding, accident, trauma, stroke), append [RED_FLAG_ALERT] at the end.
+2. Ask ONLY ONE short, professional question at a time using SOCRATES protocol.
+3. If emergency red-flag symptoms occur (severe chest pain, heavy bleeding, accident, trauma, stroke), append [RED_FLAG_ALERT] at the end.
 """
 
 class ConnectionManager:
@@ -99,7 +93,12 @@ async def clinical_ai_chat(payload: ChatRequest):
     user_msgs = [m.get("text") for m in history if m.get("sender") == "user"]
     user_msg_count = len(user_msgs)
 
-    # 1. Profile Extraction (Name -> Age -> Phone -> Complaint)
+    # Emergency Red-Flag Auto Detect
+    msg_lower = user_msg.lower()
+    red_flag_keywords = ["chest pain", "chhati me dard", "saans lene me dikkat", "stroke", "severe bleeding", "heavy bleeding", "bleeding", "accident", "trauma", "unconscious"]
+    is_emergency = any(kw in msg_lower for kw in red_flag_keywords)
+
+    # Step Extraction (Name -> Age -> Phone -> Complaint)
     if user_msg_count >= 1 and not details.get("patient_name"):
         details["patient_name"] = clean_patient_name(user_msgs[0])
 
@@ -115,7 +114,6 @@ async def clinical_ai_chat(payload: ChatRequest):
         details["chief_complaint"] = user_msgs[3].strip()
 
     # Pain Site Auto-Detection
-    msg_lower = user_msg.lower()
     if any(w in msg_lower for w in ["stomach", "pet", "belly", "abdomen", "gastric", "acidity", "vomit"]):
         selected_site = "Abdomen"
     elif any(w in msg_lower for w in ["head", "sir", "sar", "headache"]):
@@ -127,43 +125,15 @@ async def clinical_ai_chat(payload: ChatRequest):
     elif any(w in msg_lower for w in ["leg", "pair", "knee", "arm", "hand"]):
         selected_site = "Limbs"
 
-    red_flag_keywords = ["chest pain", "chhati me dard", "saans lene me dikkat", "stroke", "severe bleeding", "heavy bleeding", "bleeding", "accident", "trauma"]
-    is_emergency = any(kw in msg_lower for kw in red_flag_keywords)
-
     ai_reply = ""
+    poll_options = []
     show_history_prompt = False
 
-    # Dynamic Groq AI Query
-    if user_msg_count >= 4 and GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_"):
-        try:
-            formatted_prompt = CLINICAL_SYSTEM_PROMPT.format(lang="Hindi" if lang == "hi" else "English")
-            messages = [{"role": "system", "content": formatted_prompt}]
-            
-            for msg in history:
-                role = "assistant" if msg.get("sender") in ["assistant", "ai"] else "user"
-                messages.append({"role": role, "content": msg.get("text", "")})
-            
-            messages.append({"role": "user", "content": user_msg})
-
-            url = "https://api.groq.com/openai/v1/chat/completions"
-            headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
-            body = {
-                "model": "llama-3.1-8b-instant",
-                "messages": messages,
-                "temperature": 0.3,
-                "max_tokens": 150
-            }
-            res = requests.post(url, headers=headers, json=body, timeout=6)
-            if res.status_code == 200:
-                ai_reply = res.json()["choices"][0]["message"]["content"]
-                if "[RED_FLAG_ALERT]" in ai_reply:
-                    is_emergency = True
-                    ai_reply = ai_reply.replace("[RED_FLAG_ALERT]", "").strip()
-        except Exception as e:
-            print("Groq API Error:", e)
-
-    # Fallback Step-by-Step Flow
-    if not ai_reply:
+    # 🚨 EMERGENCY SHORT-CIRCUIT: Terminate all questions instantly
+    if is_emergency:
+        ai_reply = "🚨 EMERGENCY DETECTED! Intake terminated. Priority token assigned! Emergency Medical Team dispatched immediately." if lang == 'en' else "🚨 आपातकालीन स्थिति! आगे के प्रश्न रोके गए। प्राथमिकता टोकन जारी कर दिया गया है! आपातकालीन मेडिकल टीम को तुरंत सूचित कर दिया गया है।"
+    else:
+        # Structured Questions with Interactive Poll Options
         if user_msg_count == 1:
             ai_reply = "What is your Age?" if lang == 'en' else "आपकी उम्र कितनी है?"
         elif user_msg_count == 2:
@@ -171,18 +141,31 @@ async def clinical_ai_chat(payload: ChatRequest):
         elif user_msg_count == 3:
             ai_reply = "What main health problem or symptom brings you to the hospital today?" if lang == 'en' else "आज आप किस मुख्य स्वास्थ्य समस्या या लक्षण के इलाज के लिए आए हैं?"
         elif user_msg_count == 4:
-            ai_reply = "How would you describe the pain/symptom (e.g., sharp, burning, dull ache, or throbbing)?" if lang == 'en' else "आप इस तकलीफ को कैसे बयां करेंगे (जैसे तेज दर्द, जलन, या मीठा-मीठा दर्द)?"
+            ai_reply = "Select the type of sensation/pain you are experiencing:" if lang == 'en' else "कृपया अपनी समस्या/दर्द का प्रकार चुनें:"
+            poll_options = [
+                {"label": "⚡ Sharp Pain / तेज दर्द", "value": "Sharp Pain"},
+                {"label": "🔥 Burning / जलन", "value": "Burning Sensation"},
+                {"label": "🔨 Throbbing / टीस मारना", "value": "Throbbing Pain"},
+                {"label": "🩹 Dull Ache / मीठा-मीठा दर्द", "value": "Dull Ache"}
+            ]
         elif user_msg_count == 5:
-            ai_reply = "Does this discomfort spread to any other body part like your back, arm, or shoulders?" if lang == 'en' else "क्या यह दर्द शरीर के किसी और हिस्से (जैसे पीठ, हाथ या कंधों) तक भी फैलता है?"
+            ai_reply = "Does this pain spread to other areas?" if lang == 'en' else "क्या यह दर्द किसी और हिस्से में फैलता है?"
+            poll_options = [
+                {"label": "❌ Nowhere / कहीं नहीं", "value": "No Radiation"},
+                {"label": "🔙 To Back / पीठ की तरफ", "value": "Radiates to Back"},
+                {"label": "💪 To Arms / हाथों की तरफ", "value": "Radiates to Arms"},
+                {"label": "🎯 To Neck/Shoulder / गर्दन-कंधे", "value": "Radiates to Neck"}
+            ]
         elif user_msg_count == 6:
-            ai_reply = "Does it increase or decrease after eating food, taking rest, or walking?" if lang == 'en' else "क्या यह खाना खाने के बाद, आराम करने पर या चलने-फिरने पर बढ़ता या घटता है?"
-        elif user_msg_count == 7:
-            ai_reply = "Have you experienced similar medical issues in the past?" if lang == 'en' else "क्या आपको अतीत में भी कभी ऐसा दर्द या स्वास्थ्य समस्या हुई है?"
+            ai_reply = "Select any associated symptoms you have:" if lang == 'en' else "क्या आपको इनमें से कोई और समस्या भी महसूस हो रही है?"
+            poll_options = [
+                {"label": "🌡️ Fever / बुखार", "value": "Fever"},
+                {"label": "🤢 Nausea/Vomiting / उल्टी-जी मिचलाना", "value": "Nausea/Vomiting"},
+                {"label": "💫 Dizziness / चक्कर", "value": "Dizziness"},
+                {"label": "✅ None / कोई नहीं", "value": "None"}
+            ]
         else:
-            ai_reply = f"Clinical intake complete! Token generated." if lang == 'en' else f"नैदानिक चेक-इन पूरा हुआ! टोकन जनरेट हो गया है।"
-
-    if user_msg_count >= 7 and any(w in msg_lower for w in ["yes", "haan", "ha", "pehle bhi", "past", "earlier", "doctor"]):
-        show_history_prompt = True
+            ai_reply = "Clinical intake complete! Token generated." if lang == 'en' else "नैदानिक चेक-इन पूरा हुआ! टोकन जनरेट हो गया है।"
 
     # Token Assignment
     existing_patient = next((r for r in PATIENT_RECORDS if r.get("patient_name") == details.get("patient_name")), None)
@@ -200,7 +183,7 @@ async def clinical_ai_chat(payload: ChatRequest):
         "chief_complaint": details.get("chief_complaint", user_msg),
         "pain_site": selected_site,
         "keywords": ["Clinical Intake", f"Site: {selected_site}"],
-        "severity": "9/10" if is_emergency else "5/10",
+        "severity": "10/10 EMERGENCY" if is_emergency else "5/10",
         "is_red_flag": is_emergency,
         "history": history,
         "ocr_summary": details.get("ocr_summary", "No uploaded reports")
@@ -218,7 +201,7 @@ async def clinical_ai_chat(payload: ChatRequest):
         "status": "success",
         "reply": ai_reply,
         "is_red_flag": is_emergency,
-        "show_history_prompt": show_history_prompt,
+        "poll_options": poll_options,
         "patient_details": details,
         "detected_site": selected_site,
         "assigned_token": assigned_token
