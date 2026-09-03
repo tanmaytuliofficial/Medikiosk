@@ -83,6 +83,16 @@
             EMERGENCY</span>
     </div>
 
+    <!-- 30-SECOND AUTO REFRESH BANNER -->
+    <div id="reset-timer-banner"
+        class="hidden bg-slate-900 text-white px-6 py-2.5 mx-8 mt-2 rounded-xl text-xs font-bold text-center flex justify-between items-center z-40">
+        <span>🔄 Terminal will automatically reset for the next patient in: <strong id="countdown-sec"
+                class="text-orange-400 text-sm font-black">30</strong> seconds</span>
+        <button onclick="location.reload()"
+            class="bg-orange-600 px-3 py-1 rounded-lg text-[10px] font-black hover:bg-orange-500 uppercase">Reset
+            Now</button>
+    </div>
+
     <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex justify-center items-center">
 
         <!-- STEP 0: LANGUAGE SELECTION -->
@@ -152,7 +162,7 @@
                                 data-lucide="arrow-left" class="w-5 h-5"></i></button>
                         <div>
                             <h3 class="font-bold text-sm text-white">MediKiosk Assistant</h3>
-                            <p class="text-[11px] text-orange-400">Online</p>
+                            <p class="text-[11px] text-orange-400">Clinical Triage Desk</p>
                         </div>
                     </div>
 
@@ -230,6 +240,7 @@
         let isRecording = false;
         let voiceGuideEnabled = true;
         let initialPromptSpoken = false;
+        let countdownTimer = null;
 
         function unlockAudio() {
             if (!audioCtx) {
@@ -246,6 +257,23 @@
                 initialPromptSpoken = true;
                 speakText("Please choose your language. कृपया अपनी भाषा चुनें।", "bilingual");
             }
+        }
+
+        function start30SecAutoReset() {
+            let secondsLeft = 30;
+            document.getElementById('reset-timer-banner').classList.remove('hidden');
+            document.getElementById('countdown-sec').innerText = secondsLeft;
+
+            if (countdownTimer) clearInterval(countdownTimer);
+
+            countdownTimer = setInterval(() => {
+                secondsLeft--;
+                document.getElementById('countdown-sec').innerText = secondsLeft;
+                if (secondsLeft <= 0) {
+                    clearInterval(countdownTimer);
+                    window.location.reload();
+                }
+            }, 1000);
         }
 
         function speakText(text, mode = 'normal') {
@@ -452,7 +480,6 @@
                     document.getElementById('token-badge-number').innerText = `#${data.assigned_token}`;
                 }
 
-                // Show side body silhouette map after complaint step (>= 4)
                 if (stepIndex >= 4) {
                     document.getElementById('chat-container').classList.remove('lg:col-span-3');
                     document.getElementById('chat-container').classList.add('lg:col-span-2');
@@ -495,6 +522,7 @@
                             <p class="text-xs text-red-100 font-bold">PLEASE PROCEED DIRECTLY TO TRIAGE ROOM #01 IMMEDIATELY!</p>
                         </div>
                     `;
+                    start30SecAutoReset();
                 }
                 else if (data.reply.includes("Token generated") || data.reply.includes("टोकन जनरेट")) {
                     chatBox.innerHTML += `
@@ -504,6 +532,7 @@
                             <p class="text-xs text-orange-100">Please proceed to Consultation Desk #04 when called.</p>
                         </div>
                     `;
+                    start30SecAutoReset();
                 }
 
                 chatMemory.push({ sender: "assistant", text: data.reply });
