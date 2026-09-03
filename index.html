@@ -83,7 +83,6 @@
             EMERGENCY</span>
     </div>
 
-    <!-- 30-SECOND AUTO REFRESH BANNER -->
     <div id="reset-timer-banner"
         class="hidden bg-slate-900 text-white px-6 py-2.5 mx-8 mt-2 rounded-xl text-xs font-bold text-center flex justify-between items-center z-40">
         <span>🔄 Terminal will automatically reset for the next patient in: <strong id="countdown-sec"
@@ -186,9 +185,9 @@
                 </div>
             </div>
 
-            <!-- VISUAL BODY SILHOUETTE MAP -->
+            <!-- VISUAL BODY SILHOUETTE MAP (HIDDEN INITIALLY, SHOWN STRICTLY AFTER QUESTION 3) -->
             <div id="side-body-panel"
-                class="hidden lg:flex bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex-col items-center justify-between space-y-4 shadow-xl">
+                class="hidden lg:hidden bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex-col items-center justify-between space-y-4 shadow-xl">
                 <div class="text-center">
                     <h3 class="text-sm font-black text-white">Interactive Body Silhouette</h3>
                     <p class="text-[11px] text-slate-400">Tap affected area to mark pain site</p>
@@ -480,10 +479,14 @@
                     document.getElementById('token-badge-number').innerText = `#${data.assigned_token}`;
                 }
 
+                // 🚨 STRICT RULE: Display Body Silhouette Panel ONLY AFTER 3rd question is answered (Step >= 4)
                 if (stepIndex >= 4) {
                     document.getElementById('chat-container').classList.remove('lg:col-span-3');
                     document.getElementById('chat-container').classList.add('lg:col-span-2');
-                    document.getElementById('side-body-panel').classList.remove('hidden');
+
+                    const sidePanel = document.getElementById('side-body-panel');
+                    sidePanel.classList.remove('hidden', 'lg:hidden');
+                    sidePanel.classList.add('lg:flex');
                 }
 
                 if (data.detected_site && data.detected_site !== "General") {
@@ -497,6 +500,7 @@
                     </div>
                 `;
 
+                // Render Dynamic Groq Poll Option Cards
                 if (data.poll_options && data.poll_options.length > 0) {
                     let pollHtml = `<div class="grid grid-cols-2 gap-3 my-2 pl-11 max-w-md">`;
                     data.poll_options.forEach(opt => {
