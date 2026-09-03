@@ -8,7 +8,7 @@ import re
 import io
 import os
 
-app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="22.0.0")
+app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="23.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -114,32 +114,30 @@ async def clinical_ai_chat(payload: ChatRequest):
         details["chief_complaint"] = user_msgs[3].strip()
 
     # Pain Site Auto-Detection
-    if any(w in msg_lower for w in ["stomach", "pet", "belly", "abdomen", "gastric", "acidity", "vomit"]):
-        selected_site = "Abdomen"
-    elif any(w in msg_lower for w in ["head", "sir", "sar", "headache"]):
+    if any(w in msg_lower for w in ["head", "sir", "sar", "headache", "matha", "migraine"]):
         selected_site = "Head"
+    elif any(w in msg_lower for w in ["stomach", "pet", "belly", "abdomen", "gastric", "acidity", "vomit"]):
+        selected_site = "Abdomen"
     elif any(w in msg_lower for w in ["chest", "chhati", "heart"]):
         selected_site = "Chest"
     elif any(w in msg_lower for w in ["back", "peeth", "spine"]):
         selected_site = "Back"
-    elif any(w in msg_lower for w in ["leg", "pair", "knee", "arm", "hand"]):
+    elif any(w in msg_lower for w in ["leg", "pair", "knee", "arm", "hand", "limb"]):
         selected_site = "Limbs"
 
     ai_reply = ""
     poll_options = []
-    show_history_prompt = False
 
-    # 🚨 EMERGENCY SHORT-CIRCUIT: Terminate all questions instantly
+    # EMERGENCY SHORT-CIRCUIT
     if is_emergency:
         ai_reply = "🚨 EMERGENCY DETECTED! Intake terminated. Priority token assigned! Emergency Medical Team dispatched immediately." if lang == 'en' else "🚨 आपातकालीन स्थिति! आगे के प्रश्न रोके गए। प्राथमिकता टोकन जारी कर दिया गया है! आपातकालीन मेडिकल टीम को तुरंत सूचित कर दिया गया है।"
     else:
-        # Structured Questions with Interactive Poll Options
         if user_msg_count == 1:
             ai_reply = "What is your Age?" if lang == 'en' else "आपकी उम्र कितनी है?"
         elif user_msg_count == 2:
             ai_reply = "Please enter your 10-digit Mobile Number." if lang == 'en' else "कृपया अपना 10 अंकों का मोबाइल नंबर दर्ज करें।"
         elif user_msg_count == 3:
-            ai_reply = "What main health problem or symptom brings you to the hospital today?" if lang == 'en' else "आज आप किस मुख्य स्वास्थ्य समस्या या लक्षण के इलाज के लिए आए हैं?"
+            ai_reply = "What main health problem brings you to the hospital today?" if lang == 'en' else "आज आप किस मुख्य स्वास्थ्य समस्या या लक्षण के इलाज के लिए आए हैं?"
         elif user_msg_count == 4:
             ai_reply = "Select the type of sensation/pain you are experiencing:" if lang == 'en' else "कृपया अपनी समस्या/दर्द का प्रकार चुनें:"
             poll_options = [
@@ -149,18 +147,18 @@ async def clinical_ai_chat(payload: ChatRequest):
                 {"label": "🩹 Dull Ache / मीठा-मीठा दर्द", "value": "Dull Ache"}
             ]
         elif user_msg_count == 5:
-            ai_reply = "Does this pain spread to other areas?" if lang == 'en' else "क्या यह दर्द किसी और हिस्से में फैलता है?"
+            ai_reply = "Does this discomfort spread to other areas?" if lang == 'en' else "क्या यह दर्द किसी और हिस्से में फैलता है?"
             poll_options = [
                 {"label": "❌ Nowhere / कहीं नहीं", "value": "No Radiation"},
                 {"label": "🔙 To Back / पीठ की तरफ", "value": "Radiates to Back"},
                 {"label": "💪 To Arms / हाथों की तरफ", "value": "Radiates to Arms"},
-                {"label": "🎯 To Neck/Shoulder / गर्दन-कंधे", "value": "Radiates to Neck"}
+                {"label": "🎯 To Neck / गर्दन की तरफ", "value": "Radiates to Neck"}
             ]
         elif user_msg_count == 6:
             ai_reply = "Select any associated symptoms you have:" if lang == 'en' else "क्या आपको इनमें से कोई और समस्या भी महसूस हो रही है?"
             poll_options = [
                 {"label": "🌡️ Fever / बुखार", "value": "Fever"},
-                {"label": "🤢 Nausea/Vomiting / उल्टी-जी मिचलाना", "value": "Nausea/Vomiting"},
+                {"label": "🤢 Vomiting / उल्टी-जी मिचलाना", "value": "Vomiting"},
                 {"label": "💫 Dizziness / चक्कर", "value": "Dizziness"},
                 {"label": "✅ None / कोई नहीं", "value": "None"}
             ]
