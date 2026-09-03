@@ -1,43 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MediKiosk Patient Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
-        .orange-card { background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); }
-        .bubble-user { background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); }
-        .bubble-ai { background: #ffffff; border: 1px solid #e2e8f0; }
-        .body-part { cursor: pointer; transition: all 0.2s; fill: #334155; stroke: #64748b; stroke-width: 1.5; }
-        .body-part:hover { fill: #f97316; }
-        .body-part.active { fill: #ef4444 !important; stroke: #b91c1c !important; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .orange-card {
+            background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+        }
+
+        .bubble-user {
+            background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+        }
+
+        .bubble-ai {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+        }
+
+        .body-part {
+            cursor: pointer;
+            transition: all 0.2s;
+            fill: #334155;
+            stroke: #64748b;
+            stroke-width: 1.5;
+        }
+
+        .body-part:hover {
+            fill: #f97316;
+        }
+
+        .body-part.active {
+            fill: #ef4444 !important;
+            stroke: #b91c1c !important;
+        }
     </style>
 </head>
-<body class="text-slate-900 min-h-screen flex flex-col justify-between relative overflow-x-hidden" onclick="handleFirstClick()">
 
-    <!-- HEADER WITH VOICE GUIDE TOGGLE -->
-    <header id="main-header" class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-50">
+<body class="text-slate-900 min-h-screen flex flex-col justify-between relative overflow-x-hidden"
+    onclick="handleFirstClick()">
+
+    <header id="main-header"
+        class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-50">
         <h1 class="text-2xl font-black text-orange-600">MediKiosk</h1>
-        
-        <button id="voice-guide-btn" onclick="toggleVoiceGuide()" class="orange-card text-white p-3 rounded-full shadow-lg hover:scale-105 transition flex items-center gap-2">
+
+        <button id="voice-guide-btn" onclick="toggleVoiceGuide()"
+            class="orange-card text-white p-3 rounded-full shadow-lg hover:scale-105 transition flex items-center gap-2">
             <i data-lucide="volume-2" id="speaker-icon" class="w-5 h-5"></i>
             <span id="speaker-text" class="text-xs font-bold px-1 hidden md:inline">Voice Guide: ON</span>
         </button>
     </header>
 
-    <div id="red-flag-banner" class="hidden bg-red-600 text-white px-6 py-4 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 animate-bounce">
+    <div id="red-flag-banner"
+        class="hidden bg-red-600 text-white px-6 py-4 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 animate-bounce">
         <div class="flex items-center space-x-4">
             <i data-lucide="alert-circle" class="w-7 h-7"></i>
             <div>
                 <h3 class="font-extrabold">🚨 EMERGENCY CRITICAL ALERT DETECTED</h3>
-                <p class="text-xs text-red-100">Medical team & staff notified immediately!</p>
+                <p class="text-xs text-red-100">Medical team & Triage staff notified immediately!</p>
             </div>
         </div>
-        <span class="bg-white text-red-600 font-bold px-4 py-1.5 rounded-xl text-xs uppercase tracking-wider">PRIORITY 1</span>
+        <span class="bg-white text-red-600 font-bold px-4 py-1.5 rounded-xl text-xs uppercase tracking-wider">PRIORITY
+            1</span>
     </div>
 
     <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex justify-center items-center">
@@ -46,8 +80,10 @@
         <section id="lang-page" class="w-full text-center space-y-8 my-auto max-w-xl">
             <h1 class="text-4xl font-black text-slate-900">Select Language / भाषा चुनें</h1>
             <div class="grid grid-cols-2 gap-6 pt-2">
-                <button onclick="selectLanguage('en')" class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">English</button>
-                <button onclick="selectLanguage('hi')" class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">हिंदी</button>
+                <button onclick="selectLanguage('en')"
+                    class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">English</button>
+                <button onclick="selectLanguage('hi')"
+                    class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">हिंदी</button>
             </div>
         </section>
 
@@ -55,11 +91,13 @@
         <section id="landing-page" class="hidden w-full text-center space-y-8 my-auto max-w-2xl">
             <h1 class="text-4xl font-black text-orange-600">Welcome To MediKiosk</h1>
             <div class="grid grid-cols-2 gap-6 pt-2">
-                <button onclick="openVoiceMode()" class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
+                <button onclick="openVoiceMode()"
+                    class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
                     <i data-lucide="mic" class="w-8 h-8 mx-auto"></i>
                     <div>Voice Consultation</div>
                 </button>
-                <button onclick="openChatMode()" class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
+                <button onclick="openChatMode()"
+                    class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
                     <i data-lucide="message-square" class="w-8 h-8 mx-auto"></i>
                     <div>Text Consultation</div>
                 </button>
@@ -67,23 +105,29 @@
         </section>
 
         <!-- STEP 2: VOICE MODE -->
-        <section id="voice-page" class="hidden w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
-            <button onclick="goBackToWelcome()" class="text-xs text-orange-600 font-bold flex items-center gap-1"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back</button>
+        <section id="voice-page"
+            class="hidden w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
+            <button onclick="goBackToWelcome()" class="text-xs text-orange-600 font-bold flex items-center gap-1"><i
+                    data-lucide="arrow-left" class="w-4 h-4"></i> Back</button>
             <h2 class="text-2xl font-black text-slate-800">Voice Consultation Active</h2>
-            
-            <button id="mic-btn" onclick="toggleMicRecording()" class="w-32 h-32 orange-card text-white rounded-full flex flex-col items-center justify-center mx-auto shadow-xl transition hover:scale-105">
+
+            <button id="mic-btn" onclick="toggleMicRecording()"
+                class="w-32 h-32 orange-card text-white rounded-full flex flex-col items-center justify-center mx-auto shadow-xl transition hover:scale-105">
                 <i data-lucide="mic" class="w-12 h-12"></i>
-                <span id="mic-status" class="text-[10px] font-bold mt-1 uppercase tracking-wider">Tap Mic to Speak</span>
+                <span id="mic-status" class="text-[10px] font-bold mt-1 uppercase tracking-wider">Tap Mic to
+                    Speak</span>
             </button>
 
             <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left space-y-2">
                 <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase">You Said:</span>
-                    <p id="voice-user-text" class="text-slate-700 font-semibold italic text-sm mt-0.5">"Tap microphone button and speak..."</p>
+                    <p id="voice-user-text" class="text-slate-700 font-semibold italic text-sm mt-0.5">"Tap microphone
+                        button and speak..."</p>
                 </div>
                 <div class="border-t border-slate-200 pt-2">
                     <span class="text-[10px] font-bold text-orange-500 uppercase">AI Doctor Assistant:</span>
-                    <p id="voice-ai-text" class="text-orange-950 font-bold text-sm mt-0.5">"Waiting for your speech..."</p>
+                    <p id="voice-ai-text" class="text-orange-950 font-bold text-sm mt-0.5">"Waiting for your speech..."
+                    </p>
                 </div>
             </div>
         </section>
@@ -91,20 +135,30 @@
         <!-- STEP 3: CHAT MODE -->
         <section id="chat-page" class="hidden w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <div id="chat-container" class="lg:col-span-3 bg-white border border-slate-200 rounded-3xl shadow-xl flex flex-col h-[600px] overflow-hidden transition-all duration-300">
+            <div id="chat-container"
+                class="lg:col-span-3 bg-white border border-slate-200 rounded-3xl shadow-xl flex flex-col h-[600px] overflow-hidden transition-all duration-300">
                 <div class="bg-slate-900 text-white p-4 px-6 flex justify-between items-center">
                     <div class="flex items-center space-x-3">
-                        <button onclick="goBackToWelcome()" class="text-slate-400 hover:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+                        <button onclick="goBackToWelcome()" class="text-slate-400 hover:text-white"><i
+                                data-lucide="arrow-left" class="w-5 h-5"></i></button>
                         <div>
                             <h3 class="font-bold text-sm text-white">MediKiosk Assistant</h3>
-                            <p class="text-[11px] text-orange-400">Online</p>
+                            <p class="text-[11px] text-orange-400">Clinical Triage Desk</p>
                         </div>
+                    </div>
+
+                    <!-- TOKEN NUMBER BADGE IN TOP BAR -->
+                    <div id="patient-token-badge"
+                        class="hidden bg-orange-500/20 border border-orange-500/50 px-3 py-1 rounded-xl text-right">
+                        <span class="text-[9px] text-orange-300 font-bold block uppercase">Your OPD Token</span>
+                        <span id="token-badge-number" class="text-sm font-black text-orange-400">#---</span>
                     </div>
                 </div>
 
                 <div id="chat-box" class="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50"></div>
 
-                <div id="doc-upload-box" class="hidden bg-orange-50 p-3 border-t border-orange-200 flex items-center justify-between px-6">
+                <div id="doc-upload-box"
+                    class="hidden bg-orange-50 p-3 border-t border-orange-200 flex items-center justify-between px-6">
                     <span class="text-xs text-orange-800 font-semibold">Have past medical prescription or report?</span>
                     <label class="bg-orange-600 text-white text-xs font-bold px-4 py-2 rounded-xl cursor-pointer">
                         📄 Scan Report
@@ -113,15 +167,19 @@
                 </div>
 
                 <div class="p-4 bg-white border-t border-slate-100">
-                    <form id="chat-form" onsubmit="handleChatSubmit(event)" class="flex items-center gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200">
-                        <input type="text" id="chat-input" placeholder="Type here..." required class="flex-1 bg-transparent px-4 py-2 text-sm text-slate-800 focus:outline-none">
-                        <button type="submit" class="orange-card text-white p-3 rounded-xl font-bold"><i data-lucide="send" class="w-4 h-4"></i></button>
+                    <form id="chat-form" onsubmit="handleChatSubmit(event)"
+                        class="flex items-center gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200">
+                        <input type="text" id="chat-input" placeholder="Type here..." required
+                            class="flex-1 bg-transparent px-4 py-2 text-sm text-slate-800 focus:outline-none">
+                        <button type="submit" class="orange-card text-white p-3 rounded-xl font-bold"><i
+                                data-lucide="send" class="w-4 h-4"></i></button>
                     </form>
                 </div>
             </div>
 
             <!-- VISUAL BODY SILHOUETTE MAP -->
-            <div id="side-body-panel" class="hidden lg:flex bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex-col items-center justify-between space-y-4 shadow-xl">
+            <div id="side-body-panel"
+                class="hidden lg:flex bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex-col items-center justify-between space-y-4 shadow-xl">
                 <div class="text-center">
                     <h3 class="text-sm font-black text-white">Interactive Body Silhouette</h3>
                     <p class="text-[11px] text-slate-400">Tap affected area to mark pain site</p>
@@ -129,13 +187,20 @@
 
                 <div class="relative w-40 h-80 flex justify-center items-center">
                     <svg viewBox="0 0 100 200" class="w-full h-full">
-                        <circle id="part-head" onclick="highlightPart('Head', this)" class="body-part" cx="50" cy="20" r="14" />
-                        <path id="part-chest" onclick="highlightPart('Chest', this)" class="body-part" d="M32,38 L68,38 L65,75 L35,75 Z" />
-                        <path id="part-abdomen" onclick="highlightPart('Abdomen', this)" class="body-part" d="M35,77 L65,77 L60,115 L40,115 Z" />
-                        <rect id="part-arm-left" onclick="highlightPart('Limbs', this)" class="body-part" x="16" y="38" width="12" height="70" rx="6" />
-                        <rect id="part-arm-right" onclick="highlightPart('Limbs', this)" class="body-part" x="72" y="38" width="12" height="70" rx="6" />
-                        <rect id="part-leg-left" onclick="highlightPart('Limbs', this)" class="body-part" x="32" y="118" width="15" height="75" rx="7" />
-                        <rect id="part-leg-right" onclick="highlightPart('Limbs', this)" class="body-part" x="53" y="118" width="15" height="75" rx="7" />
+                        <circle id="part-head" onclick="highlightPart('Head', this)" class="body-part" cx="50" cy="20"
+                            r="14" />
+                        <path id="part-chest" onclick="highlightPart('Chest', this)" class="body-part"
+                            d="M32,38 L68,38 L65,75 L35,75 Z" />
+                        <path id="part-abdomen" onclick="highlightPart('Abdomen', this)" class="body-part"
+                            d="M35,77 L65,77 L60,115 L40,115 Z" />
+                        <rect id="part-arm-left" onclick="highlightPart('Limbs', this)" class="body-part" x="16" y="38"
+                            width="12" height="70" rx="6" />
+                        <rect id="part-arm-right" onclick="highlightPart('Limbs', this)" class="body-part" x="72" y="38"
+                            width="12" height="70" rx="6" />
+                        <rect id="part-leg-left" onclick="highlightPart('Limbs', this)" class="body-part" x="32" y="118"
+                            width="15" height="75" rx="7" />
+                        <rect id="part-leg-right" onclick="highlightPart('Limbs', this)" class="body-part" x="53"
+                            y="118" width="15" height="75" rx="7" />
                     </svg>
                 </div>
 
@@ -149,7 +214,8 @@
 
     </main>
 
-    <footer class="text-center text-xs text-slate-400 py-3 border-t border-slate-100 select-none">MediKiosk Patient Terminal</footer>
+    <footer class="text-center text-xs text-slate-400 py-3 border-t border-slate-100 select-none">MediKiosk Patient
+        Terminal</footer>
 
     <script>
         lucide.createIcons();
@@ -183,7 +249,6 @@
             }
         }
 
-        // Natural Voice Speech Synthesis
         function speakText(text, mode = 'normal') {
             if (voiceGuideEnabled && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
@@ -194,7 +259,7 @@
                     utterance.lang = 'hi-IN';
                 } else {
                     utterance.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
-                    const preferredVoice = voices.find(v => 
+                    const preferredVoice = voices.find(v =>
                         (currentLang === 'hi' && v.lang.includes('hi')) ||
                         (currentLang === 'en' && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Samantha') || v.name.includes('Zira')))
                     );
@@ -207,7 +272,7 @@
             }
         }
 
-        window.speechSynthesis.onvoiceschanged = function() {
+        window.speechSynthesis.onvoiceschanged = function () {
             window.speechSynthesis.getVoices();
         };
 
@@ -235,14 +300,14 @@
             recognition.continuous = false;
             recognition.interimResults = false;
 
-            recognition.onresult = function(event) {
+            recognition.onresult = function (event) {
                 const transcript = event.results[0][0].transcript;
                 document.getElementById('voice-user-text').innerText = `"${transcript}"`;
                 processVoiceInput(transcript);
             };
 
-            recognition.onerror = function() { stopMicUI(); };
-            recognition.onend = function() { stopMicUI(); };
+            recognition.onerror = function () { stopMicUI(); };
+            recognition.onend = function () { stopMicUI(); };
         }
 
         function toggleMicRecording() {
@@ -283,7 +348,7 @@
             try {
                 const res = await fetch(`${BASE_API_URL}/api/chat/ai-assistant`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         user_message: userMsg,
                         chat_history: chatMemory,
@@ -295,6 +360,11 @@
 
                 const data = await res.json();
                 patientDetails = data.patient_details;
+
+                if (data.assigned_token) {
+                    document.getElementById('patient-token-badge').classList.remove('hidden');
+                    document.getElementById('token-badge-number').innerText = `#${data.assigned_token}`;
+                }
 
                 document.getElementById('voice-ai-text').innerText = `"${data.reply}"`;
                 chatMemory.push({ sender: "assistant", text: data.reply });
@@ -369,11 +439,11 @@
 
             const chatBox = document.getElementById('chat-box');
             chatBox.innerHTML = '';
-            
+
             const initialMsg = currentLang === 'hi'
                 ? "नमस्ते! मैं मेडिकियोस्क सहायक हूँ। कृपया अपना पूरा नाम बताएं?"
                 : "Welcome! I am MediKiosk Assistant. Could you please state your Full Name?";
-            
+
             chatBox.innerHTML = `
                 <div class="flex items-start space-x-3">
                     <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black shadow-sm flex-shrink-0">AI</div>
@@ -391,15 +461,16 @@
             document.getElementById('chat-page').classList.add('hidden');
             document.getElementById('landing-page').classList.remove('hidden');
             document.getElementById('red-flag-banner').classList.add('hidden');
+            document.getElementById('patient-token-badge').classList.add('hidden');
         }
 
         function highlightPart(siteName, element) {
             document.querySelectorAll('.body-part').forEach(el => el.classList.remove('active'));
             if (element) element.classList.add('active');
-            
+
             selectedPainSite = siteName;
             document.getElementById('selected-site-tag').innerText = siteName;
-            
+
             const chatBox = document.getElementById('chat-box');
             chatBox.innerHTML += `
                 <div class="flex items-start justify-end space-x-3">
@@ -412,7 +483,7 @@
         function autoSelectBodyPart(siteName) {
             selectedPainSite = siteName;
             document.getElementById('selected-site-tag').innerText = siteName;
-            
+
             document.querySelectorAll('.body-part').forEach(el => el.classList.remove('active'));
             if (siteName === "Head") document.getElementById('part-head')?.classList.add('active');
             if (siteName === "Chest") document.getElementById('part-chest')?.classList.add('active');
@@ -428,7 +499,6 @@
             const userMsg = input.value.trim();
             if (!userMsg) return;
 
-            // Strict Validation for Step 3 (10-Digit Phone Number)
             if (stepIndex === 3) {
                 const phoneMatch = userMsg.match(/\b\d{10}\b/);
                 if (!phoneMatch) {
@@ -450,7 +520,7 @@
             try {
                 const res = await fetch(`${BASE_API_URL}/api/chat/ai-assistant`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         user_message: userMsg,
                         chat_history: chatMemory,
@@ -463,6 +533,11 @@
                 const data = await res.json();
                 patientDetails = data.patient_details;
                 stepIndex++;
+
+                if (data.assigned_token) {
+                    document.getElementById('patient-token-badge').classList.remove('hidden');
+                    document.getElementById('token-badge-number').innerText = `#${data.assigned_token}`;
+                }
 
                 if (stepIndex >= 5) {
                     document.getElementById('chat-container').classList.remove('lg:col-span-3');
@@ -480,7 +555,17 @@
                         <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-sm font-medium leading-relaxed">${data.reply}</div>
                     </div>
                 `;
-                
+
+                if (data.reply.includes("Token generated") || data.reply.includes("टोकन जनरेट")) {
+                    chatBox.innerHTML += `
+                        <div class="orange-card text-white p-6 rounded-3xl shadow-xl text-center my-4 space-y-2 border border-orange-400">
+                            <span class="bg-white text-orange-700 font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">CHECK-IN CONFIRMED</span>
+                            <h2 class="text-3xl font-black">YOUR OPD TOKEN #${data.assigned_token}</h2>
+                            <p class="text-xs text-orange-100">Please proceed to Consultation Desk #04 when called.</p>
+                        </div>
+                    `;
+                }
+
                 chatMemory.push({ sender: "assistant", text: data.reply });
                 speakText(data.reply);
 
@@ -501,4 +586,5 @@
         }
     </script>
 </body>
+
 </html>

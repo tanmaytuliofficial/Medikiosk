@@ -99,7 +99,7 @@ async def clinical_ai_chat(payload: ChatRequest):
     user_msgs = [m.get("text") for m in history if m.get("sender") == "user"]
     user_msg_count = len(user_msgs)
 
-    # 1. Separate Step Extraction (Name -> Age -> Phone -> Complaint)
+    # 1. Profile Extraction (Name -> Age -> Phone -> Complaint)
     if user_msg_count >= 1 and not details.get("patient_name"):
         details["patient_name"] = clean_patient_name(user_msgs[0])
 
@@ -133,7 +133,7 @@ async def clinical_ai_chat(payload: ChatRequest):
     ai_reply = ""
     show_history_prompt = False
 
-    # Dynamic Groq AI Query (Triggered after basic profile intake >= 4)
+    # Dynamic Groq AI Query
     if user_msg_count >= 4 and GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_"):
         try:
             formatted_prompt = CLINICAL_SYSTEM_PROMPT.format(lang="Hindi" if lang == "hi" else "English")
