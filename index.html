@@ -70,22 +70,6 @@
         </button>
     </header>
 
-    <!-- LIVE NFC CARD LOADED BANNER -->
-    <div id="nfc-card-banner"
-        class="hidden bg-emerald-600 text-white px-6 py-3 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 animate-pulse">
-        <div class="flex items-center space-x-3">
-            <i data-lucide="credit-card" class="w-6 h-6"></i>
-            <div>
-                <h3 class="font-extrabold text-sm" id="nfc-card-title">💳 NFC CARD VERIFIED & LOADED</h3>
-                <p class="text-xs text-emerald-100" id="nfc-card-subtitle">Patient Demographics Loaded. Fast-tracking to
-                    Symptom Screening...</p>
-            </div>
-        </div>
-        <span
-            class="bg-white text-emerald-700 font-black px-3 py-1 rounded-xl text-[10px] uppercase tracking-wider">FAST-TRACK
-            ACTIVE</span>
-    </div>
-
     <div id="red-flag-banner"
         class="hidden bg-red-600 text-white px-6 py-4 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 animate-bounce">
         <div class="flex items-center space-x-4">
@@ -124,7 +108,6 @@
         <!-- STEP 1: CONSULTATION MODE -->
         <section id="landing-page" class="hidden w-full text-center space-y-8 my-auto max-w-2xl">
             <h1 class="text-4xl font-black text-orange-600">Welcome To MediKiosk</h1>
-            <p class="text-xs text-slate-500">Tap your NFC Card anytime to fast-track check-in</p>
             <div class="grid grid-cols-2 gap-6 pt-2">
                 <button onclick="openVoiceMode()"
                     class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
@@ -178,8 +161,7 @@
                                 data-lucide="arrow-left" class="w-5 h-5"></i></button>
                         <div>
                             <h3 class="font-bold text-sm text-white">MediKiosk Assistant</h3>
-                            <p class="text-[11px] text-orange-400" id="patient-identity-subtitle">Online
-                            </p>
+                            <p class="text-[11px] text-orange-400">Clinical Triage Desk</p>
                         </div>
                     </div>
 
@@ -203,7 +185,7 @@
                 </div>
             </div>
 
-            <!-- VISUAL BODY SILHOUETTE MAP -->
+            <!-- VISUAL BODY SILHOUETTE MAP (HIDDEN INITIALLY, SHOWN STRICTLY AFTER QUESTION 3) -->
             <div id="side-body-panel"
                 class="hidden lg:hidden bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex-col items-center justify-between space-y-4 shadow-xl">
                 <div class="text-center">
@@ -246,83 +228,26 @@
     <script>
         lucide.createIcons();
         const BASE_API_URL = "https://medikiosk-backend-8rs2.onrender.com";
-        const WS_URL = "wss://medikiosk-backend-8rs2.onrender.com/ws/kiosk";
 
         let currentLang = 'en';
         let chatMemory = [];
         let patientDetails = {};
         let selectedPainSite = "General";
         let stepIndex = 1;
-        let isNfcMode = false;
         let audioCtx = null;
+        let recognition = null;
+        let isRecording = false;
         let voiceGuideEnabled = true;
         let initialPromptSpoken = false;
         let countdownTimer = null;
-        let socket = null;
-
-        // --- WEBSOCKET LISTENER FOR NFC CARD TAPS ---
-        function initWebSocket() {
-            socket = new WebSocket(WS_URL);
-
-            socket.onopen = () => console.log("Connected to MediKiosk WebSocket");
-
-            socket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.event_type === "NFC_PATIENT_LOADED") {
-                    handleNfcCardLoaded(data.patient_details, data.card_uid);
-                }
-            };
-
-            socket.onclose = () => setTimeout(initWebSocket, 3000);
-        }
-        initWebSocket();
-
-        function handleNfcCardLoaded(details, cardUid) {
-            unlockAudio();
-            isNfcMode = true;
-            patientDetails = details;
-            stepIndex = 4; // Leap directly to Chief Complaint
-
-            // Hide initial views and render Chat screen
-            document.getElementById('lang-page').classList.add('hidden');
-            document.getElementById('landing-page').classList.add('hidden');
-            document.getElementById('voice-page').classList.add('hidden');
-            document.getElementById('chat-page').classList.remove('hidden');
-
-            // Render Card Verified Banner
-            const banner = document.getElementById('nfc-card-banner');
-            document.getElementById('nfc-card-title').innerText = `💳 WELCOME BACK, ${details.patient_name.toUpperCase()}`;
-            document.getElementById('nfc-card-subtitle').innerText = `Age: ${details.age} | Phone: ${details.phone} | NFC Tag: ${cardUid}`;
-            banner.classList.remove('hidden');
-
-            // Display Body Map immediately
-            document.getElementById('chat-container').classList.remove('lg:col-span-3');
-            document.getElementById('chat-container').classList.add('lg:col-span-2');
-
-            const sidePanel = document.getElementById('side-body-panel');
-            sidePanel.classList.remove('hidden', 'lg:hidden');
-            sidePanel.classList.add('lg:flex');
-
-            const chatBox = document.getElementById('chat-box');
-            chatBox.innerHTML = '';
-
-            const symptomPrompt = currentLang === 'hi'
-                ? `नमस्ते ${details.patient_name}! आपकी कार्ड जानकारी लोड कर ली गई है। कृपया बताएं कि आज आप किस स्वास्थ्य समस्या का सामना कर रहे हैं?`
-                : `Hello ${details.patient_name}! Your details have been verified via NFC. What health problem or symptoms are you suffering from today?`;
-
-            chatBox.innerHTML = `
-                <div class="flex items-start space-x-3">
-                    <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black shadow-sm flex-shrink-0">AI</div>
-                    <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-sm font-medium leading-relaxed">${symptomPrompt}</div>
-                </div>
-            `;
-            chatMemory.push({ sender: "assistant", text: symptomPrompt });
-            speakText(symptomPrompt);
-        }
 
         function unlockAudio() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
         }
 
         function handleFirstClick() {
@@ -437,7 +362,7 @@
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('voice-page').classList.remove('hidden');
             chatMemory = [];
-            if (!isNfcMode) patientDetails = {};
+            patientDetails = {};
             const welcomeText = currentLang === 'hi' ? "नमस्ते! मैं मेडिकियोस्क सहायक हूँ। कृपया अपना पूरा नाम बताएं?" : "Welcome! I am MediKiosk Assistant. Could you please state your Full Name?";
             document.getElementById('voice-ai-text').innerText = `"${welcomeText}"`;
             speakText(welcomeText);
@@ -448,10 +373,8 @@
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('chat-page').classList.remove('hidden');
             chatMemory = [];
-            if (!isNfcMode) {
-                patientDetails = {};
-                stepIndex = 1;
-            }
+            patientDetails = {};
+            stepIndex = 1;
 
             const chatBox = document.getElementById('chat-box');
             chatBox.innerHTML = '';
@@ -476,10 +399,8 @@
             document.getElementById('chat-page').classList.add('hidden');
             document.getElementById('landing-page').classList.remove('hidden');
             document.getElementById('red-flag-banner').classList.add('hidden');
-            document.getElementById('nfc-card-banner').classList.add('hidden');
             document.getElementById('patient-token-badge').classList.add('hidden');
             document.getElementById('chat-input-area').classList.remove('hidden');
-            isNfcMode = false;
         }
 
         function highlightPart(siteName, element) {
@@ -518,7 +439,7 @@
             const userMsg = overrideMsg ? overrideMsg : input.value.trim();
             if (!userMsg) return;
 
-            if (!isNfcMode && stepIndex === 3 && !overrideMsg) {
+            if (stepIndex === 3 && !overrideMsg) {
                 const phoneMatch = userMsg.match(/\b\d{10}\b/);
                 if (!phoneMatch) {
                     alert(currentLang === 'hi' ? 'कृपया सही 10 अंकों का फोन नंबर दर्ज करें।' : 'Please enter a valid 10-digit Phone Number.');
@@ -545,8 +466,7 @@
                         chat_history: chatMemory,
                         language: currentLang,
                         patient_details: patientDetails,
-                        pain_site: selectedPainSite,
-                        is_nfc_mode: isNfcMode
+                        pain_site: selectedPainSite
                     })
                 });
 
@@ -559,7 +479,8 @@
                     document.getElementById('token-badge-number').innerText = `#${data.assigned_token}`;
                 }
 
-                if (stepIndex >= 4 || isNfcMode) {
+                // 🚨 STRICT RULE: Display Body Silhouette Panel ONLY AFTER 3rd question is answered (Step >= 4)
+                if (stepIndex >= 4) {
                     document.getElementById('chat-container').classList.remove('lg:col-span-3');
                     document.getElementById('chat-container').classList.add('lg:col-span-2');
 
@@ -579,6 +500,7 @@
                     </div>
                 `;
 
+                // Render Dynamic Groq Poll Option Cards
                 if (data.poll_options && data.poll_options.length > 0) {
                     let pollHtml = `<div class="grid grid-cols-2 gap-3 my-2 pl-11 max-w-md">`;
                     data.poll_options.forEach(opt => {
@@ -606,7 +528,7 @@
                     `;
                     start30SecAutoReset();
                 }
-                else if (data.reply.includes("Token generated") || data.reply.includes("टोकन जनरेट") || data.reply.includes("complete")) {
+                else if (data.reply.includes("Token generated") || data.reply.includes("टोकन जनरेट")) {
                     chatBox.innerHTML += `
                         <div class="orange-card text-white p-6 rounded-3xl shadow-xl text-center my-4 space-y-2 border border-orange-400">
                             <span class="bg-white text-orange-700 font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">CHECK-IN CONFIRMED</span>
