@@ -1,13 +1,13 @@
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 import requests
 import json
 import re
 import os
 
-app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="25.0.0")
+app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="26.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,18 +19,48 @@ app.add_middleware(
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
+# Mock Database for Registered NFC Cards (Card UID -> Patient Record)
+NFC_CARD_REGISTRY: Dict[str, dict] = {
+    "A1B2C3D4": {"patient_name": "Ramesh Kumar", "age": "45", "phone": "9876543210"},
+    "E5F6G7H8": {"patient_name": "Priya Sharma", "age": "32", "phone": "9123456789"},
+    "12345678": {"patient_name": "Amit Patel", "age": "58", "phone": "9988776655"}
+}
+
+PATIENT_RECORDS = []
+ARCHIVED_RECORDS = []
+CURRENT_TOKEN_COUNTER = 101
+
 class ChatRequest(BaseModel):
     user_message: str
     chat_history: List[dict] = []
     language: Optional[str] = "en"
     patient_details: Optional[dict] = {}
     pain_site: Optional[str] = "General"
+    is_nfc_mode: Optional[bool] = False
 
-PATIENT_RECORDS = []
-ARCHIVED_RECORDS = []
-active_connections: List[WebSocket] = []
+class NFCTapPayload(BaseModel):
+    card_uid: str
 
-CURRENT_TOKEN_COUNTER = 101
+class ConnectionManager:
+    def __init__(self):
+        self.active_kiosk_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_kiosk_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_kiosk_connections:
+            self.active_kiosk_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        for connection in self.active_kiosk_connections:
+            try:
+                await connection.send_text(json.dumps(message))
+            except Exception:
+                pass
+
+manager = ConnectionManager()
 
 def clean_patient_name(raw_text: str) -> str:
     cleaned = raw_text.strip()
@@ -64,32 +94,35 @@ If red flag/emergency symptoms occur, include "[RED_FLAG_ALERT]" in the reply st
 DO NOT output any text outside this JSON block.
 """
 
-class ConnectionManager:
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        if websocket in active_connections:
-            active_connections.remove(websocket)
-
-    async def broadcast(self, message: dict):
-        for connection in active_connections:
-            try:
-                await connection.send_text(json.dumps(message))
-            except Exception:
-                pass
-
-manager = ConnectionManager()
-
-@app.websocket("/ws/doctor-updates")
-async def websocket_endpoint(websocket: WebSocket):
+@app.websocket("/ws/kiosk")
+async def websocket_kiosk_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+@app.post("/api/nfc/tap")
+async def nfc_card_tapped(payload: NFCTapPayload):
+    card_uid = payload.card_uid.strip().upper()
+    
+    # Check if card exists in database, or generate default returning profile
+    patient_info = NFC_CARD_REGISTRY.get(card_uid, {
+        "patient_name": f"Cardholder ({card_uid[:4]})",
+        "age": "40",
+        "phone": "Registered NFC"
+    })
+
+    event_payload = {
+        "event_type": "NFC_PATIENT_LOADED",
+        "card_uid": card_uid,
+        "patient_details": patient_info
+    }
+
+    # Broadcast card tap to all connected Kiosks instantly
+    await manager.broadcast(event_payload)
+    return {"status": "success", "patient_details": patient_info}
 
 @app.post("/api/chat/ai-assistant")
 async def clinical_ai_chat(payload: ChatRequest):
@@ -100,6 +133,7 @@ async def clinical_ai_chat(payload: ChatRequest):
     lang = payload.language or "en"
     details = payload.patient_details or {}
     selected_site = payload.pain_site or "General"
+    is_nfc_mode = payload.is_nfc_mode
 
     user_msgs = [m.get("text") for m in history if m.get("sender") == "user"]
     user_msg_count = len(user_msgs)
@@ -109,20 +143,24 @@ async def clinical_ai_chat(payload: ChatRequest):
     red_flag_keywords = ["chest pain", "chhati me dard", "saans lene me dikkat", "stroke", "severe bleeding", "heavy bleeding", "bleeding", "accident", "trauma", "unconscious"]
     is_emergency = any(kw in msg_lower for kw in red_flag_keywords)
 
-    # Demographic Extraction
-    if user_msg_count >= 1 and not details.get("patient_name"):
-        details["patient_name"] = clean_patient_name(user_msgs[0])
+    # Demographic Extraction (Only if NOT bypassing via NFC)
+    if not is_nfc_mode:
+        if user_msg_count >= 1 and not details.get("patient_name"):
+            details["patient_name"] = clean_patient_name(user_msgs[0])
 
-    if user_msg_count >= 2 and not details.get("age"):
-        age_match = re.search(r'\b(\d{1,2})\b', user_msgs[1])
-        details["age"] = age_match.group(1) if age_match else user_msgs[1].strip()
+        if user_msg_count >= 2 and not details.get("age"):
+            age_match = re.search(r'\b(\d{1,2})\b', user_msgs[1])
+            details["age"] = age_match.group(1) if age_match else user_msgs[1].strip()
 
-    if user_msg_count >= 3 and not details.get("phone"):
-        phone_match = re.search(r'\b(\d{10})\b', user_msgs[2])
-        details["phone"] = phone_match.group(1) if phone_match else "Not Provided"
+        if user_msg_count >= 3 and not details.get("phone"):
+            phone_match = re.search(r'\b(\d{10})\b', user_msgs[2])
+            details["phone"] = phone_match.group(1) if phone_match else "Not Provided"
 
-    if user_msg_count >= 4 and not details.get("chief_complaint"):
-        details["chief_complaint"] = user_msgs[3].strip()
+        if user_msg_count >= 4 and not details.get("chief_complaint"):
+            details["chief_complaint"] = user_msgs[3].strip()
+    else:
+        if not details.get("chief_complaint"):
+            details["chief_complaint"] = user_msg
 
     # Pain Site Detection
     if any(w in msg_lower for w in ["head", "sir", "sar", "headache", "matha", "migraine"]):
@@ -142,8 +180,9 @@ async def clinical_ai_chat(payload: ChatRequest):
     if is_emergency:
         ai_reply = "🚨 EMERGENCY DETECTED! Intake terminated. Priority token assigned!" if lang == 'en' else "🚨 आपातकालीन स्थिति! आगे के प्रश्न रोके गए। प्राथमिकता टोकन जारी कर दिया गया है!"
     else:
-        # Dynamic AI Call using Groq LLM
-        if user_msg_count >= 4 and GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_"):
+        # Trigger Groq AI directly for symptom screening
+        should_run_ai = is_nfc_mode or (user_msg_count >= 4)
+        if should_run_ai and GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_"):
             try:
                 formatted_prompt = CLINICAL_SYSTEM_PROMPT.format(lang="Hindi" if lang == "hi" else "English")
                 messages = [{"role": "system", "content": formatted_prompt}]
@@ -175,14 +214,17 @@ async def clinical_ai_chat(payload: ChatRequest):
 
         # Fallback Intake Flow
         if not ai_reply:
-            if user_msg_count == 1:
-                ai_reply = "What is your Age?" if lang == 'en' else "आपकी उम्र कितनी है?"
-            elif user_msg_count == 2:
-                ai_reply = "Please enter your 10-digit Mobile Number." if lang == 'en' else "कृपया अपना 10 अंकों का मोबाइल नंबर दर्ज करें।"
-            elif user_msg_count == 3:
-                ai_reply = "What main health problem brings you to the hospital today?" if lang == 'en' else "आज आप किस मुख्य स्वास्थ्य समस्या या लक्षण के इलाज के लिए आए हैं?"
+            if not is_nfc_mode:
+                if user_msg_count == 1:
+                    ai_reply = "What is your Age?" if lang == 'en' else "आपकी उम्र कितनी है?"
+                elif user_msg_count == 2:
+                    ai_reply = "Please enter your 10-digit Mobile Number." if lang == 'en' else "कृपया अपना 10 अंकों का मोबाइल नंबर दर्ज करें।"
+                elif user_msg_count == 3:
+                    ai_reply = "What main health problem brings you to the hospital today?" if lang == 'en' else "आज आप किस मुख्य स्वास्थ्य समस्या या लक्षण के इलाज के लिए आए हैं?"
+                else:
+                    ai_reply = "Clinical intake complete! Token generated." if lang == 'en' else "नैदानिक चेक-इन पूरा हुआ! टोकन जनरेट हो गया है।"
             else:
-                ai_reply = "Clinical intake complete! Token generated." if lang == 'en' else "नैदानिक चेक-इन पूरा हुआ! टोकन जनरेट हो गया है।"
+                ai_reply = "Thank you. Clinical intake complete! Token generated." if lang == 'en' else "धन्यवाद। नैदानिक चेक-इन पूरा हुआ! टोकन जनरेट हो गया है।"
 
     # Assign Token
     existing_patient = next((r for r in PATIENT_RECORDS if r.get("patient_name") == details.get("patient_name")), None)
