@@ -9,14 +9,11 @@ import os
 from supabase import create_client, Client
 
 app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="25.0.0")
-
-from fastapi.middleware.cors import CORSMiddleware
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins (Cloudflare Pages, Vercel, Localhost)
-    allow_credentials=True,
-    allow_methods=["*"],  # Allows GET, POST, OPTIONS, etc.
+    allow_origins=["*"],
+    allow_credentials=False,  # Changed to False so wildcard origins work seamlessly
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
