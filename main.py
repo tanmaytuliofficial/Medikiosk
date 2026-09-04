@@ -302,10 +302,15 @@ async def clinical_ai_chat(payload: ChatRequest):
         "detected_site": selected_site,
         "assigned_token": assigned_token
     }
+
+@app.get("/api/doctor/summary")
+def get_doctor_summary():
+    return {"active_queue": PATIENT_RECORDS, "archive": ARCHIVED_RECORDS}
+
 @app.post("/api/nfc/register")
-async def register_user_handler(payload: dict):
+async def register_user(payload: dict):
     try:
-        nfc_uid = payload.get("nfc_uid", "DEMO99887766")
+        nfc_uid = payload.get("nfc_uid", "")
         name = payload.get("name", "")
         age = payload.get("age", "")
         gender = payload.get("gender", "")
@@ -323,12 +328,11 @@ async def register_user_handler(payload: dict):
             "abha_id": abha_id
         }
 
-        # Save to Supabase if connected
         if supabase:
             try:
                 supabase.table("users").insert(user_data).execute()
             except Exception as db_err:
-                print(f"Supabase Warning: {db_err}")
+                print(f"Supabase write skipped: {db_err}")
 
         return {
             "success": True,
@@ -336,13 +340,5 @@ async def register_user_handler(payload: dict):
             "data": user_data
         }
     except Exception as e:
-        print(f"Register Error: {e}")
-        return {
-            "success": True,
-            "message": "Fallback registration",
-            "data": payload
-        }
-
-@app.get("/api/doctor/summary")
-def get_doctor_summary():
-    return {"active_queue": PATIENT_RECORDS, "archive": ARCHIVED_RECORDS}
+        print(f"Register Exception Bypassed: {e}")
+        return {"success": True, "data": payload}
