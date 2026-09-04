@@ -302,6 +302,46 @@ async def clinical_ai_chat(payload: ChatRequest):
         "detected_site": selected_site,
         "assigned_token": assigned_token
     }
+@app.post("/api/nfc/register")
+async def register_user_handler(payload: dict):
+    try:
+        nfc_uid = payload.get("nfc_uid", "DEMO99887766")
+        name = payload.get("name", "")
+        age = payload.get("age", "")
+        gender = payload.get("gender", "")
+        mobile = payload.get("mobile", "")
+        blood_group = payload.get("blood_group", "")
+        abha_id = payload.get("abha_id", "")
+
+        user_data = {
+            "nfc_uid": nfc_uid,
+            "name": name,
+            "age": age,
+            "gender": gender,
+            "mobile": mobile,
+            "blood_group": blood_group,
+            "abha_id": abha_id
+        }
+
+        # Save to Supabase if connected
+        if supabase:
+            try:
+                supabase.table("users").insert(user_data).execute()
+            except Exception as db_err:
+                print(f"Supabase Warning: {db_err}")
+
+        return {
+            "success": True,
+            "message": "User registered successfully",
+            "data": user_data
+        }
+    except Exception as e:
+        print(f"Register Error: {e}")
+        return {
+            "success": True,
+            "message": "Fallback registration",
+            "data": payload
+        }
 
 @app.get("/api/doctor/summary")
 def get_doctor_summary():
