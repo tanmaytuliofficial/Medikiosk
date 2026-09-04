@@ -6,6 +6,7 @@ import requests
 import json
 import re
 import os
+from supabase import create_client, Client
 
 app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="25.0.0")
 
@@ -19,6 +20,13 @@ app.add_middleware(
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
+# ⚡ SUPABASE DATABASE INITIALIZATION
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://kosmrpnsudxwvqxejbzs.supabase.co") # Supabase Dashboard se copy kar
+SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvc21ycG5zdWR4d3ZxeGVqYnpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NDkyNzUsImV4cCI6MjEwNDAyNTI3NX0.HNmz8QveUDUhldjpUwNP1zhRiTAOm5wrbELPyCya8T0") # Supabase Dashboard se copy kar
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# --- PYDANTIC SCHEMAS ---
 class ChatRequest(BaseModel):
     user_message: str
     chat_history: List[dict] = []
@@ -26,12 +34,26 @@ class ChatRequest(BaseModel):
     patient_details: Optional[dict] = {}
     pain_site: Optional[str] = "General"
 
+class NFCTapRequest(BaseModel):
+    nfc_uid: str
+
+class NFCRegisterRequest(BaseModel):
+    nfc_uid: str
+    full_name: str
+    abha_id: Optional[str] = ""
+    age: int
+    gender: str
+    phone_number: str
+    blood_group: str
+    allergies: Optional[List[str]] = []
+    chronic_conditions: Optional[List[str]] = []
+
 PATIENT_RECORDS = []
 ARCHIVED_RECORDS = []
 active_connections: List[WebSocket] = []
-
 CURRENT_TOKEN_COUNTER = 101
 
+# --- HELPER FUNCTIONS ---
 def clean_patient_name(raw_text: str) -> str:
     cleaned = raw_text.strip()
     prefixes = [
@@ -82,6 +104,7 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+# --- WEBSOCKET ENDPOINT ---
 @app.websocket("/ws/doctor-updates")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
@@ -91,6 +114,75 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
+# --- 🚀 NEW: NFC TAP ENDPOINT (ESP32 / KIOSK HIT KAREGA) ---
+@app.post("/api/nfc/tap")
+async def handle_nfc_tap(payload: NFCTapRequest):
+    clean_uid = payload.nfc_uid.strip().upper()
+    
+    if not clean_uid:
+        raise HTTPException(status_code=400, detail="NFC UID is required")
+    
+    # Query Supabase `users` Table
+    res = supabase.table("users").select("*").eq("nfc_uid", clean_uid).execute()
+    data = res.data
+
+    # CASE 1: Existing Patient
+    if data and len(data) > 0:
+        user = data[0]
+        if user.get("is_registered"):
+            return {
+                "success": True,
+                "user_type": "EXISTING_USER",
+                "message": "Patient found successfully",
+                "data": user
+            }
+
+    # CASE 2: New NFC Tag Tapped (Insert Temporary Unregistered Entry)
+    if not data or len(data) == 0:
+        supabase.table("users").insert({
+            "nfc_uid": clean_uid,
+            "is_registered": False
+        }).execute()
+
+    return {
+        "success": True,
+        "user_type": "NEW_USER",
+        "message": "New NFC card detected. Proceed to registration.",
+        "data": {"nfc_uid": clean_uid, "is_registered": False}
+    }
+
+# --- 🚀 NEW: NFC PATIENT REGISTRATION ENDPOINT ---
+@app.post("/api/nfc/register")
+async def register_nfc_patient(payload: NFCRegisterRequest):
+    clean_uid = payload.nfc_uid.strip().upper()
+    
+    # Check if Tag exists
+    res = supabase.table("users").select("*").eq("nfc_uid", clean_uid).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="NFC Tag not found. Tap tag on reader first.")
+
+    updated_fields = {
+        "full_name": payload.full_name,
+        "abha_id": payload.abha_id,
+        "age": payload.age,
+        "gender": payload.gender,
+        "phone_number": payload.phone_number,
+        "blood_group": payload.blood_group,
+        "allergies": payload.allergies,
+        "chronic_conditions": payload.chronic_conditions,
+        "is_registered": True
+    }
+
+    # Update in Supabase
+    supabase.table("users").update(updated_fields).eq("nfc_uid", clean_uid).execute()
+
+    return {
+        "success": True,
+        "message": "Patient linked to NFC Tag successfully!",
+        "data": updated_fields
+    }
+
+# --- CLINICAL AI CHAT ENDPOINT ---
 @app.post("/api/chat/ai-assistant")
 async def clinical_ai_chat(payload: ChatRequest):
     global CURRENT_TOKEN_COUNTER
