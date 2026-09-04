@@ -10,11 +10,13 @@ from supabase import create_client, Client
 
 app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="25.0.0")
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Allows all origins (Cloudflare Pages, Vercel, Localhost)
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["*"],  # Allows GET, POST, OPTIONS, etc.
     allow_headers=["*"],
 )
 
