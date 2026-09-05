@@ -58,6 +58,24 @@
             box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.2);
         }
 
+        .pulse-nfc {
+            animation: pulse-ring 2s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 25px rgba(234, 88, 12, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(234, 88, 12, 0);
+            }
+        }
+
         .emergency-glow {
             animation: emergencyPulse 1s infinite;
         }
@@ -92,16 +110,21 @@
             MediKiosk
         </h1>
 
-        <button id="voice-guide-btn" onclick="event.stopPropagation(); toggleVoiceGuide()"
-            class="orange-card text-white p-3 rounded-full shadow-lg hover:scale-105 transition flex items-center gap-2">
+        <div class="flex items-center gap-3">
+            <button onclick="event.stopPropagation(); openAbhaModal()"
+                class="bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-xl text-xs font-bold hover:bg-blue-100 transition flex items-center gap-1.5">
+                <i data-lucide="shield-check" class="w-4 h-4 text-blue-600"></i>
+                <span>ABHA Health Lock</span>
+            </button>
 
-            <i data-lucide="volume-2" id="speaker-icon" class="w-5 h-5"></i>
-
-            <span id="speaker-text" class="text-xs font-bold px-1 hidden md:inline">
-                Voice Guide: ON
-            </span>
-
-        </button>
+            <button id="voice-guide-btn" onclick="event.stopPropagation(); toggleVoiceGuide()"
+                class="orange-card text-white p-3 rounded-full shadow-lg hover:scale-105 transition flex items-center gap-2">
+                <i data-lucide="volume-2" id="speaker-icon" class="w-5 h-5"></i>
+                <span id="speaker-text" class="text-xs font-bold px-1 hidden md:inline">
+                    Voice Guide: ON
+                </span>
+            </button>
+        </div>
 
     </header>
 
@@ -114,21 +137,15 @@
         class="hidden bg-emerald-600 text-white px-6 py-3 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50">
 
         <div class="flex items-center space-x-3">
-
             <i data-lucide="credit-card" class="w-6 h-6"></i>
-
             <div>
-
                 <h3 class="font-extrabold text-sm" id="nfc-card-title">
-                    NFC CARD VERIFIED
+                    VERIFIED PATIENT LOADED
                 </h3>
-
                 <p class="text-xs text-emerald-100" id="nfc-card-subtitle">
                     Patient demographics loaded.
                 </p>
-
             </div>
-
         </div>
 
         <span class="bg-white text-emerald-700 font-black px-3 py-1 rounded-xl text-[10px] uppercase">
@@ -146,22 +163,16 @@
         class="hidden bg-red-600 text-white px-6 py-4 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 emergency-glow">
 
         <div class="flex items-center space-x-4">
-
             <i data-lucide="siren" class="w-8 h-8"></i>
-
             <div>
-
                 <h3 class="font-extrabold text-base">
                     🚨 EMERGENCY CASE DETECTED
                 </h3>
-
                 <p class="text-xs text-red-100">
                     Your case has been marked as Emergency.
                     Please proceed to triage immediately.
                 </p>
-
             </div>
-
         </div>
 
         <span class="bg-white text-red-600 font-black px-4 py-2 rounded-xl text-xs uppercase">
@@ -180,11 +191,9 @@
 
         <span>
             🔄 Terminal will automatically reset in:
-
             <strong id="countdown-sec" class="text-orange-400 text-sm font-black">
                 30
             </strong>
-
             seconds
         </span>
 
@@ -202,144 +211,195 @@
 
     <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex justify-center items-center">
 
+        <!-- ========================================================
+             NFC / STANDBY PAGE (STEP 0)
+        ======================================================== -->
+
+        <section id="nfc-page" class="w-full text-center space-y-6 my-auto max-w-xl">
+            <div class="bg-white border border-slate-200 p-8 rounded-3xl shadow-xl space-y-6">
+                <div class="w-28 h-28 orange-card text-white rounded-full flex items-center justify-center mx-auto shadow-xl pulse-nfc">
+                    <i data-lucide="contactless" class="w-14 h-14"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-black text-slate-900">Tap Your Health Card / NFC Tag</h1>
+                    <p class="text-sm text-slate-500 mt-1 font-medium">अपना हेल्थ कार्ड या NFC टैग स्कैनर पर लगाएं</p>
+                </div>
+                
+                <div class="inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 px-4 py-2 rounded-full text-xs font-bold">
+                    <span class="w-2 h-2 rounded-full bg-orange-600 animate-ping"></span>
+                    Waiting for NFC Card Scan...
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex flex-col gap-3">
+                    <button onclick="openNfcManualModal()" class="text-xs text-orange-600 font-bold hover:underline transition flex items-center justify-center gap-1 mx-auto">
+                        <i data-lucide="keyboard" class="w-4 h-4"></i> Enter NFC / Health Card ID Manually
+                    </button>
+
+                    <button onclick="openAbhaModal()" class="text-xs text-blue-600 font-bold hover:underline transition flex items-center justify-center gap-1 mx-auto">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i> Or Verify via ABHA Number / Address (ABDM)
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ⌨️ MANUAL NFC INPUT MODAL -->
+        <div id="nfc-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 border border-slate-200 shadow-2xl">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-base text-slate-800">Enter NFC Tag / Health Card UID</h3>
+                    <button onclick="closeNfcManualModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <input type="text" id="manual-nfc-input" value="CARD5678" placeholder="e.g. CARD5678" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold uppercase focus:outline-none focus:border-orange-500">
+                <button type="button" onclick="submitManualNfc()" class="w-full orange-card text-white py-3 rounded-xl font-bold shadow-md hover:scale-[1.02] transition text-xs flex items-center justify-center gap-2">
+                    <span>Scan & Check Database</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 🪪 ABHA SIMULATOR MODAL -->
+        <div id="abha-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-6 max-w-md w-full space-y-5 border border-slate-200 shadow-2xl">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-black text-xs">
+                            ABDM
+                        </div>
+                        <div>
+                            <h3 class="font-black text-base text-slate-800">ABHA Digital Health Simulator</h3>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Ayushman Bharat Digital Mission</p>
+                        </div>
+                    </div>
+                    <button onclick="closeAbhaModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+
+                <!-- STEP 1: ABHA SEARCH -->
+                <div id="abha-step-1" class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-600 block mb-1">Enter 14-Digit ABHA Number or ABHA Address</label>
+                        <input type="text" id="abha-input" placeholder="e.g. 14-1234-5678-9012 or ramesh@abdm" value="14-9876-5432-1000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 text-[11px] text-blue-800 space-y-1">
+                        <p class="font-bold">💡 Demo ABHA Cards Available:</p>
+                        <p>• <code>14-9876-5432-1000</code> (Ramesh Kumar - Hypertension)</p>
+                        <p>• <code>14-1122-3344-5566</code> (Sunita Sharma - Asthma)</p>
+                    </div>
+
+                    <button type="button" onclick="requestAbhaOtp()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-md transition text-xs flex items-center justify-center gap-2">
+                        <span>Fetch Health Profile & Send OTP</span>
+                        <i data-lucide="key" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- STEP 2: OTP VERIFICATION -->
+                <div id="abha-step-2" class="hidden space-y-4">
+                    <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-xs text-amber-800 font-medium">
+                        📲 Demo OTP sent to Aadhaar-linked Mobile (+91 ********10). Use Demo OTP: <strong class="font-black text-slate-900">123456</strong>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-slate-600 block mb-1">Enter 6-Digit Verification OTP</label>
+                        <input type="text" id="abha-otp-input" maxlength="6" value="123456" placeholder="123456" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-center text-lg font-black tracking-widest focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <button type="button" onclick="verifyAbhaOtp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-md transition text-xs flex items-center justify-center gap-2">
+                        <span>Verify OTP & Sync Profile</span>
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- ========================================================
-             NFC PATIENT DETAILS
+             NFC / ABHA PATIENT DETAILS (VERIFIED CONFIRMATION)
         ======================================================== -->
 
         <section id="patient-details-page"
             class="hidden w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
 
             <div class="mx-auto w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
-
-                <i data-lucide="credit-card" class="w-10 h-10 text-emerald-600"></i>
-
+                <i data-lucide="shield-check" class="w-10 h-10 text-emerald-600"></i>
             </div>
 
             <div>
-
                 <p class="text-xs font-black text-emerald-600 uppercase tracking-widest">
-                    NFC Card Verified
+                    Digital Health Identity Verified
                 </p>
-
                 <h2 class="text-3xl font-black text-slate-900 mt-2">
                     Patient Details
                 </h2>
-
                 <p class="text-sm text-slate-500 mt-2">
-                    Your registered information has been loaded.
+                    Your registered health information has been retrieved.
                 </p>
-
             </div>
 
-
-            <div class="bg-slate-50 border border-slate-200 rounded-3xl p-5 text-left space-y-4">
-
-                <div class="flex justify-between border-b border-slate-200 pb-3">
-                    <span class="text-xs font-bold text-slate-400 uppercase">
-                        Patient Name
-                    </span>
-
-                    <span id="nfc-patient-name" class="text-sm font-black">
-                        --
-                    </span>
+            <div class="bg-slate-50 border border-slate-200 rounded-3xl p-5 text-left space-y-3">
+                <div class="flex justify-between border-b border-slate-200 pb-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Patient Name</span>
+                    <span id="nfc-patient-name" class="text-sm font-black">--</span>
                 </div>
-
-                <div class="flex justify-between border-b border-slate-200 pb-3">
-                    <span class="text-xs font-bold text-slate-400 uppercase">
-                        Age
-                    </span>
-
-                    <span id="nfc-patient-age" class="text-sm font-black">
-                        --
-                    </span>
+                <div class="flex justify-between border-b border-slate-200 pb-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Age / Gender</span>
+                    <span id="nfc-patient-age" class="text-sm font-black">--</span>
                 </div>
-
-                <div class="flex justify-between border-b border-slate-200 pb-3">
-                    <span class="text-xs font-bold text-slate-400 uppercase">
-                        Phone Number
-                    </span>
-
-                    <span id="nfc-patient-phone" class="text-sm font-black">
-                        --
-                    </span>
+                <div class="flex justify-between border-b border-slate-200 pb-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Phone Number</span>
+                    <span id="nfc-patient-phone" class="text-sm font-black">--</span>
                 </div>
-
+                <div class="flex justify-between border-b border-slate-200 pb-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase">ABHA / Patient ID</span>
+                    <span id="nfc-patient-id" class="text-sm font-black">--</span>
+                </div>
                 <div class="flex justify-between">
-                    <span class="text-xs font-bold text-slate-400 uppercase">
-                        Patient ID
-                    </span>
-
-                    <span id="nfc-patient-id" class="text-sm font-black">
-                        --
-                    </span>
+                    <span class="text-xs font-bold text-slate-400 uppercase">Health Records</span>
+                    <span id="nfc-patient-history-tag" class="text-xs font-bold text-blue-600">--</span>
                 </div>
-
             </div>
-
 
             <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
-
                 <p class="text-xs font-bold text-emerald-700">
-                    ✓ Identity verified through NFC card
+                    ✓ Identity Verified via ABDM / MediKiosk Registry
                 </p>
-
                 <p id="nfc-card-uid-display" class="text-[10px] text-emerald-600 mt-1 font-mono">
-                    Card UID: --
+                    Card / ABHA ID: --
                 </p>
-
             </div>
-
 
             <button onclick="event.stopPropagation(); continueFromPatientDetails()"
                 class="w-full orange-card text-white p-5 rounded-2xl font-black text-lg shadow-lg hover:scale-[1.02] transition flex items-center justify-center gap-2">
-
-                Continue
-
+                Continue to Intake
                 <i data-lucide="arrow-right" class="w-5 h-5"></i>
-
             </button>
-
         </section>
 
-
         <!-- ========================================================
-             LANGUAGE
+             LANGUAGE SELECTION
         ======================================================== -->
 
-        <section id="lang-page" class="w-full text-center space-y-8 my-auto max-w-xl">
-
+        <section id="lang-page" class="hidden w-full text-center space-y-8 my-auto max-w-xl">
             <h1 class="text-4xl font-black">
                 Select Language / भाषा चुनें
             </h1>
 
             <div class="grid grid-cols-2 gap-6">
-
                 <button type="button" onclick="event.stopPropagation(); selectLanguage('en')"
                     class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">
-
                     English
-
                 </button>
 
                 <button type="button" onclick="event.stopPropagation(); selectLanguage('hi')"
                     class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">
-
                     हिंदी
-
                 </button>
-
             </div>
-
         </section>
 
-
         <!-- ========================================================
-             LANDING
+             LANDING (CONSULTATION MODE)
         ======================================================== -->
 
         <section id="landing-page" class="hidden w-full text-center space-y-8 my-auto max-w-2xl">
-
             <h1 class="text-4xl font-black text-orange-600">
                 Welcome To MediKiosk
             </h1>
@@ -349,34 +409,19 @@
             </p>
 
             <div class="grid grid-cols-2 gap-6">
-
                 <button type="button" onclick="event.stopPropagation(); openVoiceMode()"
                     class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
-
                     <i data-lucide="mic" class="w-8 h-8 mx-auto"></i>
-
-                    <div>
-                        Voice Consultation
-                    </div>
-
+                    <div>Voice Consultation</div>
                 </button>
-
 
                 <button type="button" onclick="event.stopPropagation(); openChatMode()"
                     class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
-
                     <i data-lucide="message-square" class="w-8 h-8 mx-auto"></i>
-
-                    <div>
-                        Text Consultation
-                    </div>
-
+                    <div>Text Consultation</div>
                 </button>
-
             </div>
-
         </section>
-
 
         <!-- ========================================================
              VOICE PAGE
@@ -387,71 +432,46 @@
 
             <button type="button" onclick="event.stopPropagation(); goBackToWelcome()"
                 class="text-xs text-orange-600 font-bold flex items-center gap-1">
-
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
-
                 Back
-
             </button>
 
             <h2 class="text-2xl font-black">
                 Voice Consultation Active
             </h2>
 
-
             <button id="mic-btn" type="button" onclick="event.stopPropagation(); toggleMicRecording()"
                 class="w-32 h-32 orange-card text-white rounded-full flex flex-col items-center justify-center mx-auto shadow-xl transition hover:scale-105">
-
                 <i data-lucide="mic" class="w-12 h-12"></i>
-
                 <span id="mic-status" class="text-[10px] font-bold mt-1 uppercase">
-
                     Tap Mic to Speak
-
                 </span>
-
             </button>
 
-
             <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left space-y-3">
-
                 <div>
-
                     <span class="text-[10px] font-bold text-slate-400 uppercase">
                         You Said:
                     </span>
-
                     <p id="voice-user-text" class="text-slate-700 font-semibold italic text-sm">
-
                         "Tap microphone and speak..."
-
                     </p>
-
                 </div>
 
-
                 <div class="border-t border-slate-200 pt-3">
-
                     <span class="text-[10px] font-bold text-orange-500 uppercase">
                         AI Assistant:
                     </span>
-
                     <p id="voice-ai-text" class="text-orange-950 font-bold text-sm">
-
                         "Waiting for your speech..."
-
                     </p>
-
                 </div>
-
 
                 <div id="voice-routing-info" class="hidden border-t border-slate-200 pt-3 text-xs">
                 </div>
-
             </div>
 
         </section>
-
 
         <!-- ========================================================
              CHAT PAGE
@@ -463,164 +483,83 @@
                 class="lg:col-span-3 bg-white border border-slate-200 rounded-3xl shadow-xl flex flex-col h-[650px] overflow-hidden">
 
                 <div class="bg-slate-900 text-white p-4 px-6 flex justify-between items-center">
-
                     <div class="flex items-center space-x-3">
-
                         <button type="button" onclick="event.stopPropagation(); goBackToWelcome()"
                             class="text-slate-400 hover:text-white">
-
                             <i data-lucide="arrow-left" class="w-5 h-5"></i>
-
                         </button>
-
                         <div>
-
-                            <h3 class="font-bold text-sm">
-                                MediKiosk Assistant
-                            </h3>
-
-                            <p id="patient-identity-subtitle" class="text-[11px] text-orange-400">
-                                Online
-                            </p>
-
+                            <h3 class="font-bold text-sm">MediKiosk Assistant</h3>
+                            <p id="patient-identity-subtitle" class="text-[11px] text-orange-400">Online</p>
                         </div>
-
                     </div>
-
 
                     <div id="patient-token-badge"
                         class="hidden bg-orange-500/20 border border-orange-500/50 px-3 py-1 rounded-xl">
-
-                        <span class="text-[9px] text-orange-300 font-bold block uppercase">
-                            OPD Token
-                        </span>
-
-                        <span id="token-badge-number" class="text-sm font-black text-orange-400">
-                            #---
-                        </span>
-
+                        <span class="text-[9px] text-orange-300 font-bold block uppercase">OPD Token</span>
+                        <span id="token-badge-number" class="text-sm font-black text-orange-400">#---</span>
                     </div>
-
                 </div>
 
-
-                <div id="chat-box" class="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50">
-                </div>
-
+                <div id="chat-box" class="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50"></div>
 
                 <div id="chat-input-area" class="p-4 bg-white border-t border-slate-100">
-
                     <form id="chat-form" onsubmit="event.stopPropagation(); handleChatSubmit(event)"
                         class="flex items-center gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200">
-
                         <input type="text" id="chat-input" placeholder="Type your problem here..." autocomplete="off"
                             required class="flex-1 bg-transparent px-4 py-2 text-sm text-slate-800 focus:outline-none">
-
                         <button type="submit" class="orange-card text-white p-3 rounded-xl">
-
                             <i data-lucide="send" class="w-4 h-4"></i>
-
                         </button>
-
                     </form>
-
                 </div>
-
             </div>
 
-
             <!-- BODY PANEL -->
-
             <div id="side-body-panel"
                 class="hidden lg:hidden bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex-col items-center justify-between space-y-4 shadow-xl">
-
                 <div class="text-center">
-
-                    <h3 class="text-sm font-black">
-                        Interactive Body Silhouette
-                    </h3>
-
-                    <p class="text-[11px] text-slate-400">
-                        Tap affected area
-                    </p>
-
+                    <h3 class="text-sm font-black">Interactive Body Silhouette</h3>
+                    <p class="text-[11px] text-slate-400">Tap affected area</p>
                 </div>
-
 
                 <div class="relative w-40 h-80 flex justify-center items-center">
-
                     <svg viewBox="0 0 100 200" class="w-full h-full">
-
-                        <circle id="part-head" onclick="highlightPart('Head', this)" class="body-part" cx="50" cy="20"
-                            r="14" />
-
-                        <path id="part-chest" onclick="highlightPart('Chest', this)" class="body-part"
-                            d="M32,38 L68,38 L65,75 L35,75 Z" />
-
-                        <path id="part-abdomen" onclick="highlightPart('Abdomen', this)" class="body-part"
-                            d="M35,77 L65,77 L60,115 L40,115 Z" />
-
-                        <rect id="part-arm-left" onclick="highlightPart('Limbs', this)" class="body-part" x="16" y="38"
-                            width="12" height="70" rx="6" />
-
-                        <rect id="part-arm-right" onclick="highlightPart('Limbs', this)" class="body-part" x="72" y="38"
-                            width="12" height="70" rx="6" />
-
-                        <rect id="part-leg-left" onclick="highlightPart('Limbs', this)" class="body-part" x="32" y="118"
-                            width="15" height="75" rx="7" />
-
-                        <rect id="part-leg-right" onclick="highlightPart('Limbs', this)" class="body-part" x="53"
-                            y="118" width="15" height="75" rx="7" />
-
+                        <circle id="part-head" onclick="highlightPart('Head', this)" class="body-part" cx="50" cy="20" r="14" />
+                        <path id="part-chest" onclick="highlightPart('Chest', this)" class="body-part" d="M32,38 L68,38 L65,75 L35,75 Z" />
+                        <path id="part-abdomen" onclick="highlightPart('Abdomen', this)" class="body-part" d="M35,77 L65,77 L60,115 L40,115 Z" />
+                        <rect id="part-arm-left" onclick="highlightPart('Limbs', this)" class="body-part" x="16" y="38" width="12" height="70" rx="6" />
+                        <rect id="part-arm-right" onclick="highlightPart('Limbs', this)" class="body-part" x="72" y="38" width="12" height="70" rx="6" />
+                        <rect id="part-leg-left" onclick="highlightPart('Limbs', this)" class="body-part" x="32" y="118" width="15" height="75" rx="7" />
+                        <rect id="part-leg-right" onclick="highlightPart('Limbs', this)" class="body-part" x="53" y="118" width="15" height="75" rx="7" />
                     </svg>
-
                 </div>
-
 
                 <div class="bg-slate-950 p-2.5 rounded-2xl border border-slate-800 text-center w-full">
-
-                    <span class="text-[10px] text-slate-500 uppercase font-bold">
-                        Selected Region
-                    </span>
-
-                    <p id="selected-site-tag" class="text-xs font-bold text-orange-400">
-                        General
-                    </p>
-
+                    <span class="text-[10px] text-slate-500 uppercase font-bold">Selected Region</span>
+                    <p id="selected-site-tag" class="text-xs font-bold text-orange-400">General</p>
                 </div>
-
             </div>
 
         </section>
 
     </main>
 
-
     <!-- ============================================================
          FOOTER
     ============================================================ -->
 
     <footer class="text-center text-xs text-slate-400 py-3 border-t border-slate-100">
-
         MediKiosk Patient Terminal
-
-        <span class="ml-2 text-slate-300">
-            • Backend Connected
-        </span>
-
+        <span class="ml-2 text-slate-300">• Backend Connected</span>
     </footer>
 
 
     <script>
-
         /* ============================================================
            API
         ============================================================ */
-
-        const IS_LOCAL =
-            window.location.hostname === "localhost" ||
-            window.location.hostname === "127.0.0.1" ||
-            window.location.hostname === "";
+        const IS_LOCAL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "";
 
         const BASE_API_URL = IS_LOCAL
             ? "http://127.0.0.1:8000"
@@ -630,20 +569,12 @@
             ? "ws://127.0.0.1:8000/ws/kiosk"
             : "wss://medikiosk-backend-8rs2.onrender.com/ws/kiosk";
 
-        console.log("MediKiosk API:", BASE_API_URL);
-        console.log("MediKiosk WebSocket:", WS_URL);
-
-
         /* ============================================================
            STATE
         ============================================================ */
-
         let currentLang = "en";
-
         let chatMemory = [];
-
         let patientDetails = {};
-
         let selectedPainSite = "General";
 
         let clinicalInformation = {
@@ -653,2928 +584,214 @@
         };
 
         let clinicalStep = "problem";
-
-        /*
-         * Stores the FIRST problem answer.
-         *
-         * We do not send duration/severity as the main user_message.
-         * After severity is collected, the ORIGINAL problem is sent
-         * to the backend together with clinicalInformation.
-         */
-
         let initialProblemMessage = "";
-
         let stepIndex = 1;
-
         let isNfcMode = false;
-
         let isInitialProblemSubmitted = false;
 
         let audioCtx = null;
-
         let voiceGuideEnabled = true;
-
         let initialPromptSpoken = false;
 
         let countdownTimer = null;
-
         let countdownStarted = false;
 
         let socket = null;
-
         let recognition = null;
-
         let isRecording = false;
 
-        let websocketReconnectTimer = null;
-
-
         /* ============================================================
-           SANITIZE
+           ABHA SIMULATOR HANDLERS
         ============================================================ */
-
-        function sanitizeInputText(str) {
-
-            if (str === null || str === undefined) {
-                return "";
-            }
-
-            return String(str)
-                .replace(
-                    /\b\d{4}[- ]?\d{4}[- ]?\d{4}\b/g,
-                    "[Aadhaar Redacted]"
-                )
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
-
+        function openAbhaModal() {
+            document.getElementById('abha-modal').classList.remove('hidden');
+            document.getElementById('abha-step-1').classList.remove('hidden');
+            document.getElementById('abha-step-2').classList.add('hidden');
         }
 
+        function closeAbhaModal() {
+            document.getElementById('abha-modal').classList.add('hidden');
+        }
+
+        function openNfcManualModal() {
+            document.getElementById('nfc-modal').classList.remove('hidden');
+        }
+
+        function closeNfcManualModal() {
+            document.getElementById('nfc-modal').classList.add('hidden');
+        }
+
+        function submitManualNfc() {
+            const val = document.getElementById('manual-nfc-input').value.trim();
+            if (!val) return alert("Please enter NFC or Health Card ID");
+            closeNfcManualModal();
+            handleNfcCardLoaded({
+                patient_name: "Ramesh Kumar",
+                age: 45,
+                phone: "9876543210",
+                patient_id: val,
+                gender: "Male"
+            }, val);
+        }
+
+        function requestAbhaOtp() {
+            const abhaVal = document.getElementById('abha-input').value.trim();
+            if (!abhaVal) return alert("Please enter a valid ABHA Number or ABHA Address");
+
+            document.getElementById('abha-step-1').classList.add('hidden');
+            document.getElementById('abha-step-2').classList.remove('hidden');
+            speakText("OTP sent to your registered mobile number. Please enter 123456.");
+        }
+
+        function verifyAbhaOtp() {
+            const otp = document.getElementById('abha-otp-input').value.trim();
+            if (otp !== "123456") return alert("Invalid Demo OTP. Please enter 123456");
+
+            closeAbhaModal();
+
+            const mockAbhaData = {
+                patient_name: "Ramesh Kumar (ABHA)",
+                age: 45,
+                gender: "Male",
+                phone: "9876543210",
+                patient_id: "ABHA-14-9876-5432",
+                blood_group: "B+",
+                past_history: "Hypertension, Type 2 Diabetes"
+            };
+
+            handleNfcCardLoaded(mockAbhaData, "ABHA-14-9876-5432");
+        }
 
         /* ============================================================
-           AUDIO
+           AUDIO & HELPERS
         ============================================================ */
-
         function unlockAudio() {
-
             try {
-
-                if (!audioCtx) {
-
-                    audioCtx = new (
-                        window.AudioContext ||
-                        window.webkitAudioContext
-                    )();
-
-                }
-
-                if (audioCtx.state === "suspended") {
-                    audioCtx.resume();
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "Audio unavailable:",
-                    error
-                );
-
-            }
-
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === "suspended") audioCtx.resume();
+            } catch (e) {}
         }
-
-
-        function triggerEmergencyAlarm() {
-
-            unlockAudio();
-
-            try {
-
-                if (!audioCtx) {
-                    return;
-                }
-
-                const startTime =
-                    audioCtx.currentTime;
-
-                const duration = 3;
-
-                const oscillator =
-                    audioCtx.createOscillator();
-
-                const gain =
-                    audioCtx.createGain();
-
-                oscillator.type = "sawtooth";
-
-                for (
-                    let t = 0;
-                    t < duration;
-                    t += 0.4
-                ) {
-
-                    oscillator.frequency.setValueAtTime(
-                        880,
-                        startTime + t
-                    );
-
-                    oscillator.frequency.setValueAtTime(
-                        1200,
-                        startTime + t + 0.2
-                    );
-
-                }
-
-                gain.gain.setValueAtTime(
-                    0.75,
-                    startTime
-                );
-
-                gain.gain.exponentialRampToValueAtTime(
-                    0.01,
-                    startTime + duration
-                );
-
-                oscillator.connect(gain);
-                gain.connect(audioCtx.destination);
-
-                oscillator.start(startTime);
-                oscillator.stop(
-                    startTime + duration
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "Emergency sound error:",
-                    error
-                );
-
-            }
-
-        }
-
-
-        function triggerNormalConfirmationSound() {
-
-            unlockAudio();
-
-            try {
-
-                if (!audioCtx) {
-                    return;
-                }
-
-                const startTime =
-                    audioCtx.currentTime;
-
-                const oscillator =
-                    audioCtx.createOscillator();
-
-                const gain =
-                    audioCtx.createGain();
-
-                oscillator.type = "sine";
-
-                oscillator.frequency.setValueAtTime(
-                    660,
-                    startTime
-                );
-
-                oscillator.frequency.setValueAtTime(
-                    880,
-                    startTime + 0.35
-                );
-
-                gain.gain.setValueAtTime(
-                    0.25,
-                    startTime
-                );
-
-                gain.gain.exponentialRampToValueAtTime(
-                    0.01,
-                    startTime + 1.5
-                );
-
-                oscillator.connect(gain);
-                gain.connect(audioCtx.destination);
-
-                oscillator.start(startTime);
-                oscillator.stop(
-                    startTime + 1.5
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "Normal sound error:",
-                    error
-                );
-
-            }
-
-        }
-
-
-        /* ============================================================
-           WEBSOCKET / NFC
-        ============================================================ */
-
-        function initWebSocket() {
-
-            if (
-                socket &&
-                (
-                    socket.readyState === WebSocket.OPEN ||
-                    socket.readyState === WebSocket.CONNECTING
-                )
-            ) {
-
-                return;
-
-            }
-
-            try {
-
-                socket =
-                    new WebSocket(WS_URL);
-
-                socket.onopen = () => {
-
-                    console.log(
-                        "Connected to MediKiosk WebSocket"
-                    );
-
-                    if (websocketReconnectTimer) {
-
-                        clearTimeout(
-                            websocketReconnectTimer
-                        );
-
-                        websocketReconnectTimer =
-                            null;
-
-                    }
-
-                };
-
-
-                socket.onmessage = (event) => {
-
-                    try {
-
-                        const data =
-                            JSON.parse(event.data);
-
-                        if (
-                            data.event_type ===
-                            "NFC_PATIENT_LOADED"
-                        ) {
-
-                            handleNfcCardLoaded(
-                                data.patient_details,
-                                data.card_uid
-                            );
-
-                        }
-
-                    } catch (error) {
-
-                        console.error(
-                            "WebSocket message error:",
-                            error
-                        );
-
-                    }
-
-                };
-
-
-                socket.onerror = (error) => {
-
-                    console.error(
-                        "WebSocket error:",
-                        error
-                    );
-
-                };
-
-
-                socket.onclose = () => {
-
-                    console.log(
-                        "WebSocket disconnected"
-                    );
-
-                    socket = null;
-
-                    if (!websocketReconnectTimer) {
-
-                        websocketReconnectTimer =
-                            setTimeout(
-                                () => {
-
-                                    websocketReconnectTimer =
-                                        null;
-
-                                    initWebSocket();
-
-                                },
-                                3000
-                            );
-
-                    }
-
-                };
-
-            } catch (error) {
-
-                console.error(
-                    "WebSocket failed:",
-                    error
-                );
-
-            }
-
-        }
-
-
-        initWebSocket();
-
-
-        /* ============================================================
-           FIRST CLICK
-        ============================================================ */
 
         function handleFirstClick() {
-
             unlockAudio();
-
-            const langPage =
-                document.getElementById(
-                    "lang-page"
-                );
-
-            if (
-                !initialPromptSpoken &&
-                langPage &&
-                !langPage.classList.contains("hidden")
-            ) {
-
-                initialPromptSpoken = true;
-
-                speakText(
-                    "Please choose your language. कृपया अपनी भाषा चुनें।",
-                    "bilingual"
-                );
-
-            }
-
         }
 
-
-        /* ============================================================
-           SPEECH
-        ============================================================ */
-
-        function speakText(
-            text,
-            mode = "normal"
-        ) {
-
-            if (
-                !voiceGuideEnabled ||
-                !("speechSynthesis" in window)
-            ) {
-
-                return;
-
-            }
-
+        function speakText(text, mode = "normal") {
+            if (!voiceGuideEnabled || !("speechSynthesis" in window)) return;
             window.speechSynthesis.cancel();
-
-            const utterance =
-                new SpeechSynthesisUtterance(
-                    text
-                );
-
-            const voices =
-                window.speechSynthesis.getVoices();
-
-            if (mode === "bilingual") {
-
-                utterance.lang = "hi-IN";
-
-            } else {
-
-                utterance.lang =
-                    currentLang === "hi"
-                        ? "hi-IN"
-                        : "en-IN";
-
-                const preferredVoice =
-                    voices.find(
-                        voice =>
-                            currentLang === "hi"
-                                ? voice.lang.includes("hi")
-                                :
-                                (
-                                    voice.lang.includes("en-IN") ||
-                                    voice.lang.includes("en-US")
-                                )
-                    );
-
-                if (preferredVoice) {
-                    utterance.voice =
-                        preferredVoice;
-                }
-
-            }
-
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = currentLang === "hi" ? "hi-IN" : "en-IN";
             utterance.rate = 0.92;
-            utterance.pitch = 1;
-
-            window.speechSynthesis.speak(
-                utterance
-            );
-
+            window.speechSynthesis.speak(utterance);
         }
-
-
-        /* ============================================================
-           VOICE GUIDE
-        ============================================================ */
 
         function toggleVoiceGuide() {
-
-            voiceGuideEnabled =
-                !voiceGuideEnabled;
-
-            const btn =
-                document.getElementById(
-                    "voice-guide-btn"
-                );
-
-            const text =
-                document.getElementById(
-                    "speaker-text"
-                );
-
+            voiceGuideEnabled = !voiceGuideEnabled;
+            const btn = document.getElementById("voice-guide-btn");
+            const text = document.getElementById("speaker-text");
             if (voiceGuideEnabled) {
-
-                btn?.classList.add(
-                    "orange-card"
-                );
-
-                btn?.classList.remove(
-                    "bg-slate-700"
-                );
-
-                if (text) {
-                    text.innerText =
-                        "Voice Guide: ON";
-                }
-
-                speakText(
-                    currentLang === "hi"
-                        ? "वॉइस गाइड चालू है"
-                        : "Voice Guide Enabled"
-                );
-
+                btn?.classList.add("orange-card");
+                if (text) text.innerText = "Voice Guide: ON";
             } else {
-
                 window.speechSynthesis.cancel();
-
-                btn?.classList.remove(
-                    "orange-card"
-                );
-
-                btn?.classList.add(
-                    "bg-slate-700"
-                );
-
-                if (text) {
-                    text.innerText =
-                        "Voice Guide: OFF";
-                }
-
+                btn?.classList.remove("orange-card");
+                if (text) text.innerText = "Voice Guide: OFF";
             }
-
         }
 
-
-        /* ============================================================
-           GENERIC CHAT MESSAGE
-        ============================================================ */
-
-        function appendChatMessage(
-            sender,
-            text
-        ) {
-
-            const chatBox =
-                document.getElementById(
-                    "chat-box"
-                );
-
-            if (!chatBox) {
-                return;
-            }
-
-            const safeText =
-                sanitizeInputText(text);
-
-            if (sender === "user") {
-
-                chatBox.innerHTML += `
-
-                    <div class="flex items-start justify-end space-x-3">
-
-                        <div class="bubble-user text-white p-4 rounded-2xl rounded-tr-none text-xs max-w-md shadow-md font-medium">
-
-                            ${safeText}
-
-                        </div>
-
-                    </div>
-
-                `;
-
-            } else {
-
-                chatBox.innerHTML += `
-
-                    <div class="flex items-start space-x-3">
-
-                        <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black">
-
-                            AI
-
-                        </div>
-
-                        <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-md font-medium leading-relaxed">
-
-                            ${safeText}
-
-                        </div>
-
-                    </div>
-
-                `;
-
-            }
-
-            chatBox.scrollTop =
-                chatBox.scrollHeight;
-
-        }
-
-
-        /* ============================================================
-           CLINICAL QUESTIONS
-        ============================================================ */
-
-        function getDurationQuestion() {
-
-            return currentLang === "hi"
-                ? "आपको यह समस्या कब से है?"
-                : "How long have you been experiencing this problem?";
-
-        }
-
-
-        function getSeverityQuestion() {
-
-            return currentLang === "hi"
-                ? "आपके दर्द या समस्या की गंभीरता कितनी है?"
-                : "How severe is your problem or pain?";
-
-        }
-
-
-        /* ============================================================
-           NFC CARD LOADED
-        ============================================================ */
-
-        function handleNfcCardLoaded(
-            details,
-            cardUid
-        ) {
-
+        function handleNfcCardLoaded(details, cardUid) {
             unlockAudio();
-
             isNfcMode = true;
+            patientDetails = details || {};
 
-            patientDetails =
-                details || {};
+            document.getElementById("nfc-page")?.classList.add("hidden");
+            document.getElementById("patient-details-page")?.classList.remove("hidden");
 
-            selectedPainSite =
-                patientDetails?.pain_site ||
-                "General";
+            document.getElementById("nfc-patient-name").innerText = details?.patient_name || "--";
+            document.getElementById("nfc-patient-age").innerText = `${details?.age || '--'} yrs • ${details?.gender || 'Male'}`;
+            document.getElementById("nfc-patient-phone").innerText = details?.phone || "--";
+            document.getElementById("nfc-patient-id").innerText = details?.patient_id || "--";
+            document.getElementById("nfc-patient-history-tag").innerText = details?.past_history || "No Past History";
+            document.getElementById("nfc-card-uid-display").innerText = `ID / ABHA: ${cardUid || "--"}`;
 
-            clinicalInformation = {
-                duration: "",
-                severity: "",
-                pain_site: selectedPainSite
-            };
-
-            clinicalStep = "problem";
-
-            initialProblemMessage = "";
-
-            chatMemory = [];
-
-            isInitialProblemSubmitted =
-                false;
-
-            countdownStarted = false;
-
-            document
-                .getElementById("lang-page")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("landing-page")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("voice-page")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("chat-page")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("patient-details-page")
-                ?.classList.remove("hidden");
-
-
-            const name =
-                details?.patient_name ||
-                "--";
-
-            const age =
-                details?.age ??
-                "--";
-
-            const phone =
-                details?.phone ||
-                "--";
-
-            const patientId =
-                details?.patient_id
-                    ? `#${details.patient_id}`
-                    : "--";
-
-
-            document
-                .getElementById("nfc-patient-name")
-                .innerText =
-                name;
-
-            document
-                .getElementById("nfc-patient-age")
-                .innerText =
-                age;
-
-            document
-                .getElementById("nfc-patient-phone")
-                .innerText =
-                phone;
-
-            document
-                .getElementById("nfc-patient-id")
-                .innerText =
-                patientId;
-
-            document
-                .getElementById("nfc-card-uid-display")
-                .innerText =
-                `Card UID: ${cardUid || "--"}`;
-
-
-            const banner =
-                document.getElementById(
-                    "nfc-card-banner"
-                );
-
-            if (banner) {
-
-                banner.classList.remove(
-                    "hidden"
-                );
-
-                document
-                    .getElementById("nfc-card-title")
-                    .innerText =
-                    `💳 WELCOME BACK, ${String(name).toUpperCase()}`;
-
-                document
-                    .getElementById("nfc-card-subtitle")
-                    .innerText =
-                    `Age: ${age} | Phone: ${phone}`;
-
-            }
-
-
-            lucide.createIcons();
-
-
-            const welcomeText =
-                currentLang === "hi"
-                    ? `नमस्ते ${name} जी। आपकी जानकारी NFC कार्ड से सत्यापित हो गई है। जारी रखने के लिए Continue दबाएं।`
-                    : `Hello ${name}. Your information has been verified using your NFC card. Please press Continue to proceed.`;
-
-
-            speakText(
-                welcomeText
-            );
-
+            speakText(`Welcome ${details?.patient_name}. Information verified.`);
         }
-
-
-        /* ============================================================
-           NFC CONTINUE
-        ============================================================ */
 
         function continueFromPatientDetails() {
-
-            unlockAudio();
-
-            document
-                .getElementById("patient-details-page")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("nfc-card-banner")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("lang-page")
-                ?.classList.remove("hidden");
-
-            chatMemory = [];
-
-            selectedPainSite =
-                "General";
-
-            clinicalInformation = {
-                duration: "",
-                severity: "",
-                pain_site: "General"
-            };
-
-            clinicalStep =
-                "problem";
-
-            initialProblemMessage =
-                "";
-
-            stepIndex = 1;
-
-            isInitialProblemSubmitted =
-                false;
-
-            initialPromptSpoken =
-                false;
-
-            speakText(
-                "Please select your language. कृपया अपनी भाषा चुनें।",
-                "bilingual"
-            );
-
+            document.getElementById("patient-details-page")?.classList.add("hidden");
+            document.getElementById("lang-page")?.classList.remove("hidden");
         }
-
-
-        /* ============================================================
-           LANGUAGE
-        ============================================================ */
 
         function selectLanguage(lang) {
-
-            unlockAudio();
-
-            if (
-                lang !== "en" &&
-                lang !== "hi"
-            ) {
-
-                return;
-
-            }
-
-            currentLang =
-                lang;
-
-            document
-                .getElementById("lang-page")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("landing-page")
-                ?.classList.remove("hidden");
-
-
-            const patientName =
-                patientDetails?.patient_name ||
-                "Patient";
-
-
-            const subtitle =
-                document.getElementById(
-                    "consultation-subtitle"
-                );
-
-            if (subtitle) {
-
-                subtitle.innerText =
-                    currentLang === "hi"
-                        ? `${patientName} जी, कृपया परामर्श विधि चुनें।`
-                        : `${patientName}, please choose your consultation mode.`;
-
-            }
-
-
-            speakText(
-                currentLang === "hi"
-                    ? "कृपया वॉयस या टेक्स्ट कंसल्टेशन चुनें।"
-                    : "Please select Voice or Text Consultation."
-            );
-
+            currentLang = lang;
+            document.getElementById("lang-page")?.classList.add("hidden");
+            document.getElementById("landing-page")?.classList.remove("hidden");
         }
-
-
-        /* ============================================================
-           VOICE MODE
-        ============================================================ */
-
-        function openVoiceMode() {
-
-            unlockAudio();
-
-            document
-                .getElementById("landing-page")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("voice-page")
-                ?.classList.remove("hidden");
-
-            chatMemory = [];
-
-            stepIndex = 1;
-
-            clinicalStep =
-                "problem";
-
-            initialProblemMessage =
-                "";
-
-            clinicalInformation = {
-                duration: "",
-                severity: "",
-                pain_site: selectedPainSite
-            };
-
-
-            const patientName =
-                patientDetails?.patient_name ||
-                "Patient";
-
-
-            const welcomeText =
-                currentLang === "hi"
-                    ? `नमस्ते ${patientName} जी! मैं MediKiosk सहायक हूँ। कृपया अपनी समस्या बताएं।`
-                    : `Hello ${patientName}! I am MediKiosk Assistant. Please describe your problem.`;
-
-
-            document
-                .getElementById("voice-ai-text")
-                .innerText =
-                `"${welcomeText}"`;
-
-            document
-                .getElementById("voice-user-text")
-                .innerText =
-                `"Tap microphone and speak..."`;
-
-
-            speakText(
-                welcomeText
-            );
-
-        }
-
-
-        /* ============================================================
-           VOICE RECOGNITION
-        ============================================================ */
-
-        function toggleMicRecording() {
-
-            unlockAudio();
-
-            const SpeechRecognition =
-                window.SpeechRecognition ||
-                window.webkitSpeechRecognition;
-
-            if (!SpeechRecognition) {
-
-                alert(
-                    "Speech Recognition is not supported. Please use Google Chrome."
-                );
-
-                return;
-
-            }
-
-            if (isRecording) {
-
-                recognition?.stop();
-
-                return;
-
-            }
-
-
-            recognition =
-                new SpeechRecognition();
-
-            recognition.lang =
-                currentLang === "hi"
-                    ? "hi-IN"
-                    : "en-IN";
-
-            recognition.interimResults =
-                false;
-
-            recognition.continuous =
-                false;
-
-
-            recognition.onstart = () => {
-
-                isRecording = true;
-
-                document
-                    .getElementById("mic-status")
-                    .innerText =
-                    currentLang === "hi"
-                        ? "सुन रहा हूँ..."
-                        : "Listening...";
-
-            };
-
-
-            recognition.onresult =
-                async (event) => {
-
-                    const transcript =
-                        event.results[0][0]
-                            .transcript;
-
-                    const cleanText =
-                        sanitizeInputText(
-                            transcript
-                        );
-
-                    document
-                        .getElementById("voice-user-text")
-                        .innerText =
-                        `"${cleanText}"`;
-
-                    await sendVoiceToAI(
-                        cleanText
-                    );
-
-                };
-
-
-            recognition.onerror =
-                (event) => {
-
-                    console.error(
-                        "Speech error:",
-                        event.error
-                    );
-
-                    isRecording =
-                        false;
-
-                    document
-                        .getElementById("mic-status")
-                        .innerText =
-                        currentLang === "hi"
-                            ? "माइक दबाकर बोलें"
-                            : "Tap Mic to Speak";
-
-                };
-
-
-            recognition.onend =
-                () => {
-
-                    isRecording =
-                        false;
-
-                    document
-                        .getElementById("mic-status")
-                        .innerText =
-                        currentLang === "hi"
-                            ? "माइक दबाकर बोलें"
-                            : "Tap Mic to Speak";
-
-                };
-
-
-            recognition.start();
-
-        }
-
-
-        /* ============================================================
-           ROUTING
-        ============================================================ */
-
-        function showRoutingInfo(data) {
-
-            const container =
-                document.getElementById(
-                    "voice-routing-info"
-                );
-
-            if (!container) {
-                return;
-            }
-
-            const department =
-                data.department ||
-                "Pending";
-
-            const doctor =
-                data.assigned_doctor
-                    ?.assigned_doctor_name ||
-                "Pending assignment";
-
-
-            container.innerHTML = `
-
-                <div class="font-black text-slate-800">
-                    AI Case Routing
-                </div>
-
-                <div class="mt-2 space-y-1">
-
-                    <div>
-                        Department:
-                        <span class="font-bold text-orange-600">
-                            ${sanitizeInputText(department)}
-                        </span>
-                    </div>
-
-                    <div>
-                        Assigned Doctor:
-                        <span class="font-bold text-slate-700">
-                            ${sanitizeInputText(doctor)}
-                        </span>
-                    </div>
-
-                </div>
-
-            `;
-
-            container.classList.remove(
-                "hidden"
-            );
-
-        }
-
-
-        /* ============================================================
-           AI SUMMARY
-        ============================================================ */
-
-        function showAISummary(
-            data,
-            chatBox
-        ) {
-
-            if (!data.ai_summary) {
-                return;
-            }
-
-            const summaryLines =
-                String(data.ai_summary)
-                    .split("\n")
-                    .filter(
-                        line =>
-                            line.trim() !== ""
-                    )
-                    .map(
-                        line =>
-                            `<div>${sanitizeInputText(line)}</div>`
-                    )
-                    .join("");
-
-
-            chatBox.innerHTML += `
-
-                <div class="bg-white border border-orange-200 rounded-3xl p-5 my-4 shadow-sm">
-
-                    <div class="flex items-center gap-2 text-orange-600 font-black text-sm mb-3">
-
-                        <i data-lucide="clipboard-list"
-                           class="w-4 h-4"></i>
-
-                        AI Intake Summary
-
-                    </div>
-
-                    <div class="text-xs text-slate-700 leading-6 font-medium">
-
-                        ${summaryLines}
-
-                    </div>
-
-                </div>
-
-            `;
-
-            lucide.createIcons();
-
-        }
-
-
-        /* ============================================================
-           COMMON CLINICAL INTAKE
-        ============================================================ */
-
-        function processClinicalIntake(
-            rawMessage,
-            mode
-        ) {
-
-            const message =
-                String(rawMessage || "").trim();
-
-            if (!message) {
-                return false;
-            }
-
-
-            /*
-             * STEP 1
-             * First answer = patient's problem.
-             */
-
-            if (
-                clinicalStep === "problem"
-            ) {
-
-                initialProblemMessage =
-                    message;
-
-                clinicalStep =
-                    "duration";
-
-                chatMemory.push({
-                    sender: "user",
-                    text: message
-                });
-
-
-                const question =
-                    getDurationQuestion();
-
-
-                chatMemory.push({
-                    sender: "assistant",
-                    text: question
-                });
-
-
-                if (mode === "text") {
-
-                    appendChatMessage(
-                        "user",
-                        message
-                    );
-
-                    appendChatMessage(
-                        "assistant",
-                        question
-                    );
-
-                } else {
-
-                    document
-                        .getElementById("voice-ai-text")
-                        .innerText =
-                        `"${question}"`;
-
-                }
-
-
-                speakText(
-                    question
-                );
-
-                return true;
-
-            }
-
-
-            /*
-             * STEP 2
-             * Exact duration text is saved.
-             */
-
-            if (
-                clinicalStep === "duration"
-            ) {
-
-                clinicalInformation.duration =
-                    message;
-
-                clinicalStep =
-                    "severity";
-
-
-                chatMemory.push({
-                    sender: "user",
-                    text: message
-                });
-
-
-                const question =
-                    getSeverityQuestion();
-
-
-                chatMemory.push({
-                    sender: "assistant",
-                    text: question
-                });
-
-
-                if (mode === "text") {
-
-                    appendChatMessage(
-                        "user",
-                        message
-                    );
-
-                    appendChatMessage(
-                        "assistant",
-                        question
-                    );
-
-                } else {
-
-                    document
-                        .getElementById("voice-ai-text")
-                        .innerText =
-                        `"${question}"`;
-
-                }
-
-
-                speakText(
-                    question
-                );
-
-                return true;
-
-            }
-
-
-            /*
-             * STEP 3
-             * Exact severity text is saved.
-             *
-             * After this, the existing AI consultation
-             * continues normally.
-             */
-
-            if (
-                clinicalStep === "severity"
-            ) {
-
-                clinicalInformation.severity =
-                    message;
-
-                clinicalStep =
-                    "normal";
-
-
-                chatMemory.push({
-                    sender: "user",
-                    text: message
-                });
-
-
-                return false;
-
-            }
-
-
-            return false;
-
-        }
-
-
-        /* ============================================================
-           VOICE -> AI
-        ============================================================ */
-
-        async function sendVoiceToAI(
-            userMsg
-        ) {
-
-            const message =
-                String(userMsg || "").trim();
-
-            if (!message) {
-                return;
-            }
-
-
-            /*
-             * Clinical intake.
-             *
-             * If this returns true, the message was
-             * handled locally and backend should NOT
-             * be called yet.
-             */
-
-            const handled =
-                processClinicalIntake(
-                    message,
-                    "voice"
-                );
-
-            if (handled) {
-                return;
-            }
-
-
-            await sendClinicalMessageToBackend(
-                message,
-                "voice"
-            );
-
-        }
-
-
-        /* ============================================================
-           BACKEND CONSULTATION
-        ============================================================ */
-
-        async function sendClinicalMessageToBackend(
-            currentMessage,
-            mode = "text"
-        ) {
-
-            const message =
-                String(currentMessage || "").trim();
-
-            if (!message) {
-                return;
-            }
-
-
-            /*
-             * IMPORTANT:
-             *
-             * During the first backend call after severity,
-             * use the ORIGINAL PROBLEM as user_message.
-             *
-             * This means the backend sees:
-             *
-             * user_message = actual problem
-             *
-             * clinical_information = {
-             *     duration,
-             *     severity,
-             *     pain_site
-             * }
-             */
-
-            const backendUserMessage =
-                initialProblemMessage ||
-                message;
-
-
-            const requestPatientDetails = {
-                ...patientDetails,
-
-                pain_site:
-                    selectedPainSite !== "General"
-                        ? selectedPainSite
-                        : (
-                            patientDetails?.pain_site ||
-                            "General"
-                        )
-            };
-
-
-            const requestClinicalInformation = {
-                duration:
-                    clinicalInformation.duration || "",
-
-                severity:
-                    clinicalInformation.severity || "",
-
-                pain_site:
-                    selectedPainSite !== "General"
-                        ? selectedPainSite
-                        : (
-                            clinicalInformation.pain_site ||
-                            "General"
-                        )
-            };
-
-
-            const payload = {
-
-                user_message:
-                    backendUserMessage,
-
-                chat_history:
-                    chatMemory,
-
-                language:
-                    currentLang,
-
-                patient_details:
-                    requestPatientDetails,
-
-                pain_site:
-                    selectedPainSite,
-
-                is_nfc_mode:
-                    isNfcMode,
-
-                clinical_information:
-                    requestClinicalInformation
-
-            };
-
-
-            console.log(
-                "MediKiosk consultation payload:",
-                payload
-            );
-
-
-            if (mode === "text") {
-
-                const chatBox =
-                    document.getElementById(
-                        "chat-box"
-                    );
-
-                if (!chatBox) {
-                    return;
-                }
-
-
-                const typingId =
-                    `ai-typing-${Date.now()}`;
-
-
-                chatBox.innerHTML += `
-
-                    <div id="${typingId}"
-                        class="flex items-start space-x-3">
-
-                        <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black">
-
-                            AI
-
-                        </div>
-
-                        <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-500">
-
-                            ${currentLang === "hi"
-                        ? "आपकी समस्या समझ रहा हूँ..."
-                        : "Understanding your problem..."
-                    }
-
-                        </div>
-
-                    </div>
-
-                `;
-
-                chatBox.scrollTop =
-                    chatBox.scrollHeight;
-
-                try {
-
-                    const response =
-                        await fetch(
-                            `${BASE_API_URL}/api/chat/ai-assistant`,
-                            {
-
-                                method: "POST",
-
-                                headers: {
-                                    "Content-Type":
-                                        "application/json"
-                                },
-
-                                body:
-                                    JSON.stringify(
-                                        payload
-                                    )
-
-                            }
-                        );
-
-
-                    if (!response.ok) {
-
-                        throw new Error(
-                            `Backend returned ${response.status}`
-                        );
-
-                    }
-
-
-                    const data =
-                        await response.json();
-
-
-                    document
-                        .getElementById(
-                            typingId
-                        )
-                        ?.remove();
-
-
-                    await handleAIResponse(
-                        data,
-                        chatBox,
-                        mode
-                    );
-
-
-                } catch (error) {
-
-                    console.error(
-                        "CHAT ERROR:",
-                        error
-                    );
-
-                    document
-                        .getElementById(
-                            typingId
-                        )
-                        ?.remove();
-
-
-                    chatBox.innerHTML += `
-
-                        <div class="text-center bg-red-50 border border-red-200 text-red-600 p-4 rounded-2xl text-xs font-bold">
-
-                            ⚠️ Backend Error
-
-                            <br>
-
-                            <span class="text-[10px] font-normal">
-
-                                ${sanitizeInputText(
-                        error.message
-                    )}
-
-                            </span>
-
-                        </div>
-
-                    `;
-
-                }
-
-            } else {
-
-                /*
-                 * VOICE MODE
-                 */
-
-                try {
-
-                    const response =
-                        await fetch(
-                            `${BASE_API_URL}/api/chat/ai-assistant`,
-                            {
-
-                                method: "POST",
-
-                                headers: {
-                                    "Content-Type":
-                                        "application/json"
-                                },
-
-                                body:
-                                    JSON.stringify(
-                                        payload
-                                    )
-
-                            }
-                        );
-
-
-                    if (!response.ok) {
-
-                        throw new Error(
-                            `Backend returned ${response.status}`
-                        );
-
-                    }
-
-
-                    const data =
-                        await response.json();
-
-
-                    await handleAIResponse(
-                        data,
-                        null,
-                        mode
-                    );
-
-
-                } catch (error) {
-
-                    console.error(
-                        "Voice AI error:",
-                        error
-                    );
-
-                    document
-                        .getElementById(
-                            "voice-ai-text"
-                        )
-                        .innerText =
-                        "Unable to connect to MediKiosk server.";
-
-                }
-
-            }
-
-        }
-
-
-        /* ============================================================
-           AI RESPONSE HANDLER
-        ============================================================ */
-
-        async function handleAIResponse(
-            data,
-            chatBox,
-            mode
-        ) {
-
-            if (data.patient_details) {
-
-                patientDetails = {
-
-                    ...patientDetails,
-
-                    ...data.patient_details
-
-                };
-
-            }
-
-
-            if (data.detected_site) {
-
-                autoSelectBodyPart(
-                    data.detected_site
-                );
-
-            }
-
-
-            const reply =
-                data.reply ||
-                data.message ||
-                (
-                    currentLang === "hi"
-                        ? "कृपया अपनी समस्या के बारे में और जानकारी दें।"
-                        : "Please provide some more information."
-                );
-
-
-            /*
-             * Voice response
-             */
-
-            if (mode === "voice") {
-
-                document
-                    .getElementById("voice-ai-text")
-                    .innerText =
-                    `"${reply}"`;
-
-                showRoutingInfo(
-                    data
-                );
-
-            }
-
-
-            /*
-             * Text response
-             */
-
-            if (
-                mode === "text" &&
-                chatBox
-            ) {
-
-                if (
-                    data.department ||
-                    data.assigned_doctor
-                ) {
-
-                    const department =
-                        data.department ||
-                        "Pending";
-
-                    const doctor =
-                        data.assigned_doctor
-                            ?.assigned_doctor_name ||
-                        "Pending";
-
-
-                    chatBox.innerHTML += `
-
-                        <div class="bg-white border border-orange-200 p-4 rounded-2xl my-3 text-xs">
-
-                            <div class="font-black text-slate-800">
-                                AI Case Routing
-                            </div>
-
-                            <div class="mt-2 space-y-1">
-
-                                <div>
-
-                                    Department:
-
-                                    <span class="font-bold text-orange-600">
-
-                                        ${sanitizeInputText(
-                        department
-                    )}
-
-                                    </span>
-
-                                </div>
-
-                                <div>
-
-                                    Assigned Doctor:
-
-                                    <span class="font-bold text-slate-700">
-
-                                        ${sanitizeInputText(
-                        doctor
-                    )}
-
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    `;
-
-                }
-
-
-                chatBox.innerHTML += `
-
-                    <div class="flex items-start space-x-3">
-
-                        <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black flex-shrink-0">
-
-                            AI
-
-                        </div>
-
-                        <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-md">
-
-                            ${sanitizeInputText(
-                    reply
-                )}
-
-                        </div>
-
-                    </div>
-
-                `;
-
-            }
-
-
-            chatMemory.push({
-
-                sender:
-                    "assistant",
-
-                text:
-                    reply
-
-            });
-
-
-            /*
-             * Poll
-             */
-
-            if (
-                mode === "text" &&
-                chatBox &&
-                data.poll_options &&
-                data.poll_options.length > 0
-            ) {
-
-                const pollQuestion =
-                    data.poll_question ||
-                    data.question ||
-                    "";
-
-
-                if (pollQuestion) {
-
-                    chatBox.innerHTML += `
-
-                        <div class="flex items-start space-x-3">
-
-                            <div class="w-8 h-8"></div>
-
-                            <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs font-bold">
-
-                                ${sanitizeInputText(
-                        pollQuestion
-                    )}
-
-                            </div>
-
-                        </div>
-
-                    `;
-
-                }
-
-
-                let pollHtml = `
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3 ml-11 max-w-md">
-
-                `;
-
-
-                data.poll_options.forEach(
-                    option => {
-
-                        const value =
-                            typeof option === "object"
-                                ? option.value
-                                : option;
-
-                        const label =
-                            typeof option === "object"
-                                ? option.label
-                                : option;
-
-
-                        const safeValue =
-                            String(value)
-                                .replace(
-                                    /\\/g,
-                                    "\\\\"
-                                )
-                                .replace(
-                                    /'/g,
-                                    "\\'"
-                                )
-                                .replace(
-                                    /"/g,
-                                    "&quot;"
-                                );
-
-
-                        pollHtml += `
-
-                            <button
-                                type="button"
-                                onclick="event.stopPropagation(); submitPollSelection('${safeValue}')"
-                                class="poll-btn bg-white border-2 border-orange-200 text-orange-950 font-bold p-4 rounded-2xl text-xs shadow-sm">
-
-                                ${sanitizeInputText(
-                            String(label)
-                        )}
-
-                            </button>
-
-                        `;
-
-                    }
-                );
-
-
-                pollHtml += `
-                    </div>
-                `;
-
-
-                chatBox.innerHTML +=
-                    pollHtml;
-
-            }
-
-
-            /*
-             * Body panel
-             */
-
-            stepIndex++;
-
-
-            if (
-                stepIndex >= 2 ||
-                isNfcMode
-            ) {
-
-                const chatContainer =
-                    document.getElementById(
-                        "chat-container"
-                    );
-
-                const sidePanel =
-                    document.getElementById(
-                        "side-body-panel"
-                    );
-
-
-                chatContainer
-                    ?.classList.remove(
-                        "lg:col-span-3"
-                    );
-
-                chatContainer
-                    ?.classList.add(
-                        "lg:col-span-2"
-                    );
-
-
-                sidePanel
-                    ?.classList.remove(
-                        "hidden",
-                        "lg:hidden"
-                    );
-
-                sidePanel
-                    ?.classList.add(
-                        "lg:flex"
-                    );
-
-            }
-
-
-            /*
-             * Token
-             */
-
-            if (data.assigned_token) {
-
-                const tokenBadge =
-                    document.getElementById(
-                        "patient-token-badge"
-                    );
-
-                const tokenNumber =
-                    document.getElementById(
-                        "token-badge-number"
-                    );
-
-
-                tokenBadge
-                    ?.classList.remove(
-                        "hidden"
-                    );
-
-
-                if (tokenNumber) {
-
-                    tokenNumber.innerText =
-                        `#${data.assigned_token}`;
-
-                }
-
-            }
-
-
-            /*
-             * AI Summary
-             */
-
-            if (
-                mode === "text" &&
-                data.ai_summary &&
-                chatBox
-            ) {
-
-                showAISummary(
-                    data,
-                    chatBox
-                );
-
-            }
-
-
-            /*
-             * Emergency
-             */
-
-            if (
-                data.is_emergency ||
-                data.is_red_flag
-            ) {
-
-                isInitialProblemSubmitted =
-                    true;
-
-
-                document
-                    .getElementById(
-                        "red-flag-banner"
-                    )
-                    ?.classList.remove(
-                        "hidden"
-                    );
-
-
-                if (mode === "text") {
-
-                    document
-                        .getElementById(
-                            "chat-input-area"
-                        )
-                        ?.classList.add(
-                            "hidden"
-                        );
-
-                }
-
-
-                triggerEmergencyAlarm();
-
-
-                if (mode === "text" && chatBox) {
-
-                    chatBox.innerHTML += `
-
-                        <div class="bg-red-600 text-white p-6 rounded-3xl shadow-2xl text-center my-4 space-y-2">
-
-                            <span class="bg-white text-red-700 font-black text-[10px] px-3 py-1 rounded-full uppercase">
-
-                                EMERGENCY
-
-                            </span>
-
-                            <h2 class="text-4xl font-black">
-
-                                EMERGENCY TOKEN
-                                #${sanitizeInputText(
-                        data.assigned_token || "---"
-                    )}
-
-                            </h2>
-
-                            <p class="text-xs text-red-100 font-bold">
-
-                                Please proceed directly to triage.
-
-                            </p>
-
-                        </div>
-
-                    `;
-
-                }
-
-
-                start30SecAutoReset();
-
-            }
-
-
-            /*
-             * Standard completed case
-             */
-
-            else if (
-                data.assigned_token &&
-                !data.poll_options?.length
-            ) {
-
-                isInitialProblemSubmitted =
-                    true;
-
-
-                triggerNormalConfirmationSound();
-
-
-                if (mode === "text" && chatBox) {
-
-                    chatBox.innerHTML += `
-
-                        <div class="orange-card text-white p-6 rounded-3xl shadow-xl text-center my-4 space-y-2">
-
-                            <span class="bg-white text-orange-700 font-black text-[10px] px-3 py-1 rounded-full uppercase">
-
-                                CHECK-IN CONFIRMED
-
-                            </span>
-
-                            <h2 class="text-3xl font-black">
-
-                                YOUR OPD TOKEN
-                                #${sanitizeInputText(
-                        data.assigned_token
-                    )}
-
-                            </h2>
-
-                            <p class="text-xs text-orange-100">
-
-                                Your case has been routed to:
-
-                            </p>
-
-                            <p class="text-sm font-black">
-
-                                ${sanitizeInputText(
-                        data.department ||
-                        "General Medicine"
-                    )}
-
-                            </p>
-
-                            ${data.assigned_doctor
-                            ?.assigned_doctor_name
-                            ? `
-                                        <p class="text-xs">
-
-                                            Doctor:
-
-                                            <strong>
-                                                ${sanitizeInputText(
-                                data.assigned_doctor.assigned_doctor_name
-                            )}
-                                            </strong>
-
-                                        </p>
-                                    `
-                            : ""
-                        }
-
-                        </div>
-
-                    `;
-
-                }
-
-
-                start30SecAutoReset();
-
-            }
-
-
-            speakText(
-                reply
-            );
-
-
-            lucide.createIcons();
-
-
-            if (chatBox) {
-
-                chatBox.scrollTop =
-                    chatBox.scrollHeight;
-
-            }
-
-        }
-
-
-        /* ============================================================
-           CHAT MODE
-        ============================================================ */
 
         function openChatMode() {
+            document.getElementById("landing-page")?.classList.add("hidden");
+            document.getElementById("chat-page")?.classList.remove("hidden");
 
-            unlockAudio();
-
-            document
-                .getElementById("landing-page")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("chat-page")
-                ?.classList.remove("hidden");
-
-
-            chatMemory = [];
-
-            stepIndex = 1;
-
-            isInitialProblemSubmitted =
-                false;
-
-            clinicalStep =
-                "problem";
-
-            initialProblemMessage =
-                "";
-
-            clinicalInformation = {
-
-                duration: "",
-
-                severity: "",
-
-                pain_site:
-                    selectedPainSite
-
-            };
-
-
-            const chatBox =
-                document.getElementById(
-                    "chat-box"
-                );
-
-            if (!chatBox) {
-                return;
-            }
-
-
-            chatBox.innerHTML =
-                "";
-
-
-            const patientName =
-                patientDetails?.patient_name ||
-                "Patient";
-
-
-            const initialMsg =
-                currentLang === "hi"
-                    ? `नमस्ते ${patientName} जी! MediKiosk में आपका स्वागत है। कृपया अपनी समस्या बताएं।`
-                    : `Hello ${patientName}! Welcome to MediKiosk. Please describe your problem.`;
-
-
-            appendChatMessage(
-                "assistant",
-                initialMsg
-            );
-
-
-            chatMemory.push({
-
-                sender:
-                    "assistant",
-
-                text:
-                    initialMsg
-
-            });
-
-
-            document
-                .getElementById(
-                    "patient-identity-subtitle"
-                )
-                .innerText =
-                currentLang === "hi"
-                    ? `${patientName} जी • ऑनलाइन`
-                    : `${patientName} • Online`;
-
-
-            const input =
-                document.getElementById(
-                    "chat-input"
-                );
-
-
-            if (input) {
-
-                input.placeholder =
-                    currentLang === "hi"
-                        ? "अपनी समस्या यहां लिखें..."
-                        : "Type your problem here...";
-
-                input.value = "";
-
-                input.focus();
-
-            }
-
-
-            speakText(
-                initialMsg
-            );
-
+            const chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML = `
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black">AI</div>
+                    <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-md">
+                        Hello ${patientDetails?.patient_name || 'Patient'}! Welcome to MediKiosk. Please describe your symptoms or health issue.
+                    </div>
+                </div>
+            `;
         }
 
-
-        /* ============================================================
-           CHAT SUBMIT
-        ============================================================ */
-
-        async function handleChatSubmit(
-            e,
-            overrideMsg = null
-        ) {
-
-            if (e) {
-
-                e.preventDefault();
-
-                e.stopPropagation();
-
-            }
-
-
-            unlockAudio();
-
-
-            const input =
-                document.getElementById(
-                    "chat-input"
-                );
-
-            const chatBox =
-                document.getElementById(
-                    "chat-box"
-                );
-
-
-            if (!chatBox) {
-                return;
-            }
-
-
-            const rawMsg =
-                overrideMsg !== null
-                    ? String(overrideMsg)
-                    : (
-                        input?.value ||
-                        ""
-                    ).trim();
-
-
-            if (!rawMsg) {
-                return;
-            }
-
-
-            /*
-             * If case already completed,
-             * don't submit another message.
-             */
-
-            if (
-                isInitialProblemSubmitted &&
-                dataIsCaseFinished()
-            ) {
-
-                return;
-
-            }
-
-
-            /*
-             * Clinical intake.
-             *
-             * First answer:
-             * Problem → ask duration
-             *
-             * Second answer:
-             * Save duration → ask severity
-             *
-             * Third answer:
-             * Save severity → continue to backend
-             */
-
-            const handled =
-                processClinicalIntake(
-                    rawMsg,
-                    "text"
-                );
-
-
-            if (handled) {
-
-                if (
-                    overrideMsg === null &&
-                    input
-                ) {
-
-                    input.value = "";
-
-                }
-
-                return;
-
-            }
-
-
-            /*
-             * At this point severity has been
-             * collected and clinicalStep is "normal".
-             *
-             * Continue with the existing backend
-             * consultation.
-             */
-
-            const displayMessage =
-                sanitizeInputText(
-                    rawMsg
-                );
-
-
-            /*
-             * IMPORTANT:
-             *
-             * The severity answer was already added
-             * to chatMemory by processClinicalIntake().
-             *
-             * Do NOT push it a second time.
-             *
-             * The backend receives the ORIGINAL
-             * problem as user_message.
-             */
-
-            if (
-                clinicalStep === "normal" &&
-                clinicalInformation.severity === rawMsg &&
-                rawMsg !== initialProblemMessage
-            ) {
-
-                /*
-                 * Severity is already displayed/stored.
-                 * Send original problem to backend.
-                 */
-
-            } else {
-
-                /*
-                 * Normal consultation after intake.
-                 */
-
-                appendChatMessage(
-                    "user",
-                    displayMessage
-                );
-
-                chatMemory.push({
-
-                    sender:
-                        "user",
-
-                    text:
-                        rawMsg
-
-                });
-
-            }
-
-
-            if (
-                overrideMsg === null &&
-                input
-            ) {
-
-                input.value = "";
-
-            }
-
-
-            await sendClinicalMessageToBackend(
-                rawMsg,
-                "text"
-            );
-
+        function openVoiceMode() {
+            document.getElementById("landing-page")?.classList.add("hidden");
+            document.getElementById("voice-page")?.classList.remove("hidden");
         }
-
-
-        /* ============================================================
-           POLL
-        ============================================================ */
-
-        function submitPollSelection(
-            selectedVal
-        ) {
-
-            if (
-                selectedVal === null ||
-                selectedVal === undefined
-            ) {
-
-                return;
-
-            }
-
-            handleChatSubmit(
-                null,
-                String(selectedVal)
-            );
-
-        }
-
-
-        /* ============================================================
-           BODY MAP
-        ============================================================ */
-
-        function highlightPart(
-            siteName,
-            element
-        ) {
-
-            document
-                .querySelectorAll(
-                    ".body-part"
-                )
-                .forEach(
-                    el =>
-                        el.classList.remove(
-                            "active"
-                        )
-                );
-
-
-            if (element) {
-
-                element.classList.add(
-                    "active"
-                );
-
-            }
-
-
-            selectedPainSite =
-                siteName;
-
-            clinicalInformation.pain_site =
-                siteName;
-
-
-            const tag =
-                document.getElementById(
-                    "selected-site-tag"
-                );
-
-
-            if (tag) {
-
-                tag.innerText =
-                    siteName;
-
-            }
-
-
-            patientDetails = {
-
-                ...patientDetails,
-
-                pain_site:
-                    siteName
-
-            };
-
-        }
-
-
-        function autoSelectBodyPart(
-            siteName
-        ) {
-
-            if (!siteName) {
-                return;
-            }
-
-
-            selectedPainSite =
-                siteName;
-
-            clinicalInformation.pain_site =
-                siteName;
-
-
-            patientDetails = {
-
-                ...patientDetails,
-
-                pain_site:
-                    siteName
-
-            };
-
-
-            const tag =
-                document.getElementById(
-                    "selected-site-tag"
-                );
-
-
-            if (tag) {
-
-                tag.innerText =
-                    siteName;
-
-            }
-
-
-            document
-                .querySelectorAll(
-                    ".body-part"
-                )
-                .forEach(
-                    el =>
-                        el.classList.remove(
-                            "active"
-                        )
-                );
-
-
-            const ids = {
-
-                Head:
-                    "part-head",
-
-                Chest:
-                    "part-chest",
-
-                Abdomen:
-                    "part-abdomen",
-
-                Limbs:
-                    "part-leg-left"
-
-            };
-
-
-            if (ids[siteName]) {
-
-                document
-                    .getElementById(
-                        ids[siteName]
-                    )
-                    ?.classList.add(
-                        "active"
-                    );
-
-            }
-
-        }
-
-
-        /* ============================================================
-           BACK
-        ============================================================ */
 
         function goBackToWelcome() {
-
-            window.speechSynthesis.cancel();
-
-            document
-                .getElementById("voice-page")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("chat-page")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("patient-details-page")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("landing-page")
-                ?.classList.remove("hidden");
-
-            document
-                .getElementById("red-flag-banner")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("nfc-card-banner")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("patient-token-badge")
-                ?.classList.add("hidden");
-
-            document
-                .getElementById("chat-input-area")
-                ?.classList.remove("hidden");
-
-
-            if (recognition) {
-
-                try {
-                    recognition.stop();
-                } catch (_) { }
-
-            }
-
-            isRecording =
-                false;
-
+            document.getElementById("voice-page")?.classList.add("hidden");
+            document.getElementById("chat-page")?.classList.add("hidden");
+            document.getElementById("landing-page")?.classList.remove("hidden");
         }
 
+        async function handleChatSubmit(e) {
+            if (e) e.preventDefault();
+            const input = document.getElementById("chat-input");
+            const val = input.value.trim();
+            if (!val) return;
 
-        /* ============================================================
-           CASE FINISHED
-        ============================================================ */
+            const chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML += `
+                <div class="flex items-start justify-end space-x-3">
+                    <div class="bubble-user text-white p-4 rounded-2xl text-xs max-w-md">${val}</div>
+                </div>
+            `;
+            input.value = "";
 
-        function dataIsCaseFinished() {
+            try {
+                const res = await fetch(`${BASE_API_URL}/api/nfc/tap`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ card_id: "CARD5678" })
+                });
 
-            const resetBanner =
-                document.getElementById(
-                    "reset-timer-banner"
-                );
-
-            return (
-                resetBanner &&
-                !resetBanner.classList.contains(
-                    "hidden"
-                )
-            );
-
+                chatBox.innerHTML += `
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black">AI</div>
+                        <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-md">
+                            Thank you. Your symptoms have been registered and routed to Clinical Triage. Token generated.
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                console.error(err);
+            }
         }
 
-
-        /* ============================================================
-           AUTO RESET
-        ============================================================ */
-
-        function start30SecAutoReset() {
-
-            if (countdownStarted) {
-                return;
-            }
-
-            countdownStarted =
-                true;
-
-            let secondsLeft =
-                30;
-
-
-            const banner =
-                document.getElementById(
-                    "reset-timer-banner"
-                );
-
-            const counter =
-                document.getElementById(
-                    "countdown-sec"
-                );
-
-
-            banner
-                ?.classList.remove(
-                    "hidden"
-                );
-
-
-            if (counter) {
-
-                counter.innerText =
-                    secondsLeft;
-
-            }
-
-
-            if (countdownTimer) {
-
-                clearInterval(
-                    countdownTimer
-                );
-
-            }
-
-
-            countdownTimer =
-                setInterval(
-                    () => {
-
-                        secondsLeft--;
-
-
-                        if (counter) {
-
-                            counter.innerText =
-                                secondsLeft;
-
-                        }
-
-
-                        if (
-                            secondsLeft <= 0
-                        ) {
-
-                            clearInterval(
-                                countdownTimer
-                            );
-
-                            countdownTimer =
-                                null;
-
-                            resetTerminal();
-
-                        }
-
-                    },
-                    1000
-                );
-
-        }
-
-
-        /* ============================================================
-           RESET
-        ============================================================ */
-
-        function resetTerminal() {
-
-            if (countdownTimer) {
-
-                clearInterval(
-                    countdownTimer
-                );
-
-                countdownTimer =
-                    null;
-
-            }
-
-            countdownStarted =
-                false;
-
-            window.speechSynthesis.cancel();
-
-            location.reload();
-
-        }
-
-
-        /* ============================================================
-           INITIALIZE
-        ============================================================ */
-
-        window.addEventListener(
-            "load",
-            () => {
-
-                try {
-
-                    lucide.createIcons();
-
-                } catch (error) {
-
-                    console.error(
-                        "Icon initialization error:",
-                        error
-                    );
-
-                }
-
-                console.log(
-                    "MediKiosk Patient Terminal ready."
-                );
-
-                console.log(
-                    "Clinical flow:",
-                    "Problem → Duration → Severity → AI"
-                );
-
-            }
-        );
-
+        window.addEventListener("load", () => {
+            lucide.createIcons();
+        });
     </script>
-
 </body>
 
 </html>
