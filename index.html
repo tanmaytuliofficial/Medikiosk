@@ -4,217 +4,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>MediKiosk Patient Terminal</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #f8fafc;
-        }
-
-        .orange-card {
-            background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
-        }
-
-        .bubble-user {
-            background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
-        }
-
-        .bubble-ai {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-        }
-
-        .body-part {
-            cursor: pointer;
-            transition: all 0.2s;
-            fill: #334155;
-            stroke: #64748b;
-            stroke-width: 1.5;
-        }
-
-        .body-part:hover {
-            fill: #f97316;
-        }
-
-        .body-part.active {
-            fill: #ef4444 !important;
-            stroke: #b91c1c !important;
-        }
-
-        .poll-btn {
-            transition: all 0.2s ease-in-out;
-        }
-
-        .poll-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.2);
-        }
-
-        .pulse-nfc {
-            animation: pulse-ring 2s infinite;
-        }
-
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .orange-card { background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); }
+        .bubble-user { background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); }
+        .bubble-ai { background: #ffffff; border: 1px solid #e2e8f0; }
+        .body-part { cursor: pointer; transition: all 0.2s; fill: #334155; stroke: #64748b; stroke-width: 1.5; }
+        .body-part:hover { fill: #f97316; }
+        .body-part.active { fill: #ef4444 !important; stroke: #b91c1c !important; }
+        .poll-btn { transition: all 0.2s ease-in-out; }
+        .poll-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.2); }
+        .pulse-nfc { animation: pulse-ring 2s infinite; }
         @keyframes pulse-ring {
-            0% {
-                box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.4);
-            }
-
-            70% {
-                box-shadow: 0 0 0 25px rgba(234, 88, 12, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(234, 88, 12, 0);
-            }
+            0% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.4); }
+            70% { box-shadow: 0 0 0 25px rgba(234, 88, 12, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); }
         }
-
-        .emergency-glow {
-            animation: emergencyPulse 1s infinite;
-        }
-
+        .emergency-glow { animation: emergencyPulse 1s infinite; }
         @keyframes emergencyPulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-            }
-
-            70% {
-                box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-            }
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
     </style>
 </head>
 
-<body class="text-slate-900 min-h-screen flex flex-col justify-between relative overflow-x-hidden"
-    onclick="handleFirstClick()">
+<body class="text-slate-900 min-h-screen flex flex-col justify-between relative overflow-x-hidden" onclick="handleFirstClick()">
 
-    <!-- ============================================================
-         HEADER
-    ============================================================ -->
-
-    <header id="main-header"
-        class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-50">
-
-        <h1 class="text-2xl font-black text-orange-600">
-            MediKiosk
-        </h1>
-
+    <!-- HEADER -->
+    <header id="main-header" class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-50">
+        <h1 class="text-2xl font-black text-orange-600">MediKiosk</h1>
         <div class="flex items-center gap-3">
-            <button onclick="event.stopPropagation(); openAbhaModal()"
-                class="bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-xl text-xs font-bold hover:bg-blue-100 transition flex items-center gap-1.5">
+            <button onclick="event.stopPropagation(); openAbhaModal()" class="bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-xl text-xs font-bold hover:bg-blue-100 transition flex items-center gap-1.5">
                 <i data-lucide="shield-check" class="w-4 h-4 text-blue-600"></i>
                 <span>ABHA Health Lock</span>
             </button>
-
-            <button id="voice-guide-btn" onclick="event.stopPropagation(); toggleVoiceGuide()"
-                class="orange-card text-white p-3 rounded-full shadow-lg hover:scale-105 transition flex items-center gap-2">
+            <button id="voice-guide-btn" onclick="event.stopPropagation(); toggleVoiceGuide()" class="orange-card text-white p-3 rounded-full shadow-lg hover:scale-105 transition flex items-center gap-2">
                 <i data-lucide="volume-2" id="speaker-icon" class="w-5 h-5"></i>
-                <span id="speaker-text" class="text-xs font-bold px-1 hidden md:inline">
-                    Voice Guide: ON
-                </span>
+                <span id="speaker-text" class="text-xs font-bold px-1 hidden md:inline">Voice Guide: ON</span>
             </button>
         </div>
-
     </header>
 
-
-    <!-- ============================================================
-         NFC BANNER
-    ============================================================ -->
-
-    <div id="nfc-card-banner"
-        class="hidden bg-emerald-600 text-white px-6 py-3 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50">
-
-        <div class="flex items-center space-x-3">
-            <i data-lucide="credit-card" class="w-6 h-6"></i>
-            <div>
-                <h3 class="font-extrabold text-sm" id="nfc-card-title">
-                    VERIFIED PATIENT LOADED
-                </h3>
-                <p class="text-xs text-emerald-100" id="nfc-card-subtitle">
-                    Patient demographics loaded.
-                </p>
-            </div>
-        </div>
-
-        <span class="bg-white text-emerald-700 font-black px-3 py-1 rounded-xl text-[10px] uppercase">
-            FAST-TRACK ACTIVE
-        </span>
-
-    </div>
-
-
-    <!-- ============================================================
-         EMERGENCY BANNER
-    ============================================================ -->
-
-    <div id="red-flag-banner"
-        class="hidden bg-red-600 text-white px-6 py-4 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 emergency-glow">
-
+    <!-- EMERGENCY BANNER -->
+    <div id="red-flag-banner" class="hidden bg-red-600 text-white px-6 py-4 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 emergency-glow">
         <div class="flex items-center space-x-4">
             <i data-lucide="siren" class="w-8 h-8"></i>
             <div>
-                <h3 class="font-extrabold text-base">
-                    🚨 EMERGENCY CASE DETECTED
-                </h3>
-                <p class="text-xs text-red-100">
-                    Your case has been marked as Emergency.
-                    Please proceed to triage immediately.
-                </p>
+                <h3 class="font-extrabold text-base">🚨 EMERGENCY CASE DETECTED</h3>
+                <p class="text-xs text-red-100">Your case has been marked as Emergency. Please proceed to triage immediately.</p>
             </div>
         </div>
-
-        <span class="bg-white text-red-600 font-black px-4 py-2 rounded-xl text-xs uppercase">
-            EMERGENCY
-        </span>
-
+        <span class="bg-white text-red-600 font-black px-4 py-2 rounded-xl text-xs uppercase">EMERGENCY</span>
     </div>
 
-
-    <!-- ============================================================
-         RESET TIMER
-    ============================================================ -->
-
-    <div id="reset-timer-banner"
-        class="hidden bg-slate-900 text-white px-6 py-2.5 mx-8 mt-2 rounded-xl text-xs font-bold text-center flex justify-between items-center">
-
-        <span>
-            🔄 Terminal will automatically reset in:
-            <strong id="countdown-sec" class="text-orange-400 text-sm font-black">
-                30
-            </strong>
-            seconds
-        </span>
-
-        <button onclick="event.stopPropagation(); resetTerminal()"
-            class="bg-orange-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase">
-            Reset Now
-        </button>
-
-    </div>
-
-
-    <!-- ============================================================
-         MAIN
-    ============================================================ -->
-
+    <!-- MAIN CONTAINER -->
     <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex justify-center items-center">
 
-        <!-- ========================================================
-             NFC / STANDBY PAGE (STEP 0)
-        ======================================================== -->
-
+        <!-- STEP 0: STANDBY SCREEN -->
         <section id="nfc-page" class="w-full text-center space-y-6 my-auto max-w-xl">
             <div class="bg-white border border-slate-200 p-8 rounded-3xl shadow-xl space-y-6">
                 <div class="w-28 h-28 orange-card text-white rounded-full flex items-center justify-center mx-auto shadow-xl pulse-nfc">
@@ -224,17 +77,10 @@
                     <h1 class="text-3xl font-black text-slate-900">Tap Your Health Card / NFC Tag</h1>
                     <p class="text-sm text-slate-500 mt-1 font-medium">अपना हेल्थ कार्ड या NFC टैग स्कैनर पर लगाएं</p>
                 </div>
-                
-                <div class="inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 px-4 py-2 rounded-full text-xs font-bold">
-                    <span class="w-2 h-2 rounded-full bg-orange-600 animate-ping"></span>
-                    Waiting for NFC Card Scan...
-                </div>
-
                 <div class="pt-4 border-t border-slate-100 flex flex-col gap-3">
                     <button onclick="openNfcManualModal()" class="text-xs text-orange-600 font-bold hover:underline transition flex items-center justify-center gap-1 mx-auto">
                         <i data-lucide="keyboard" class="w-4 h-4"></i> Enter NFC / Health Card ID Manually
                     </button>
-
                     <button onclick="openAbhaModal()" class="text-xs text-blue-600 font-bold hover:underline transition flex items-center justify-center gap-1 mx-auto">
                         <i data-lucide="shield-check" class="w-4 h-4"></i> Or Verify via ABHA Number / Address (ABDM)
                     </button>
@@ -242,7 +88,7 @@
             </div>
         </section>
 
-        <!-- ⌨️ MANUAL NFC INPUT MODAL -->
+        <!-- MANUAL NFC MODAL -->
         <div id="nfc-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 border border-slate-200 shadow-2xl">
                 <div class="flex justify-between items-center">
@@ -257,14 +103,12 @@
             </div>
         </div>
 
-        <!-- 🪪 ABHA SIMULATOR MODAL -->
+        <!-- ABHA SIMULATOR MODAL -->
         <div id="abha-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-3xl p-6 max-w-md w-full space-y-5 border border-slate-200 shadow-2xl">
                 <div class="flex justify-between items-center border-b border-slate-100 pb-3">
                     <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-black text-xs">
-                            ABDM
-                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-black text-xs">ABDM</div>
                         <div>
                             <h3 class="font-black text-base text-slate-800">ABHA Digital Health Simulator</h3>
                             <p class="text-[10px] text-slate-400 font-bold uppercase">Ayushman Bharat Digital Mission</p>
@@ -272,255 +116,99 @@
                     </div>
                     <button onclick="closeAbhaModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
-
-                <!-- STEP 1: ABHA SEARCH -->
                 <div id="abha-step-1" class="space-y-4">
                     <div>
                         <label class="text-xs font-bold text-slate-600 block mb-1">Enter 14-Digit ABHA Number or ABHA Address</label>
-                        <input type="text" id="abha-input" placeholder="e.g. 14-1234-5678-9012 or ramesh@abdm" value="14-9876-5432-1000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-blue-500">
+                        <input type="text" id="abha-input" value="14-9876-5432-1000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-blue-500">
                     </div>
-
-                    <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 text-[11px] text-blue-800 space-y-1">
-                        <p class="font-bold">💡 Demo ABHA Cards Available:</p>
-                        <p>• <code>14-9876-5432-1000</code> (Ramesh Kumar - Hypertension)</p>
-                        <p>• <code>14-1122-3344-5566</code> (Sunita Sharma - Asthma)</p>
-                    </div>
-
-                    <button type="button" onclick="requestAbhaOtp()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-md transition text-xs flex items-center justify-center gap-2">
-                        <span>Fetch Health Profile & Send OTP</span>
-                        <i data-lucide="key" class="w-4 h-4"></i>
+                    <button type="button" onclick="requestAbhaOtp()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition text-xs">
+                        Fetch Health Profile & Send OTP ➔
                     </button>
                 </div>
-
-                <!-- STEP 2: OTP VERIFICATION -->
                 <div id="abha-step-2" class="hidden space-y-4">
-                    <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-xs text-amber-800 font-medium">
-                        📲 Demo OTP sent to Aadhaar-linked Mobile (+91 ********10). Use Demo OTP: <strong class="font-black text-slate-900">123456</strong>
+                    <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-xs text-amber-800">
+                        Demo OTP sent. Use Demo OTP: <strong class="font-black">123456</strong>
                     </div>
-
-                    <div>
-                        <label class="text-xs font-bold text-slate-600 block mb-1">Enter 6-Digit Verification OTP</label>
-                        <input type="text" id="abha-otp-input" maxlength="6" value="123456" placeholder="123456" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-center text-lg font-black tracking-widest focus:outline-none focus:border-blue-500">
-                    </div>
-
-                    <button type="button" onclick="verifyAbhaOtp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-md transition text-xs flex items-center justify-center gap-2">
-                        <span>Verify OTP & Sync Profile</span>
-                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    <input type="text" id="abha-otp-input" maxlength="6" value="123456" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-center text-lg font-black focus:outline-none">
+                    <button type="button" onclick="verifyAbhaOtp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold transition text-xs">
+                        Verify OTP & Sync Profile ➔
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- ========================================================
-             NFC / ABHA PATIENT DETAILS (VERIFIED CONFIRMATION)
-        ======================================================== -->
-
-        <section id="patient-details-page"
-            class="hidden w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
-
+        <!-- VERIFIED PATIENT DETAILS -->
+        <section id="patient-details-page" class="hidden w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
             <div class="mx-auto w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
                 <i data-lucide="shield-check" class="w-10 h-10 text-emerald-600"></i>
             </div>
-
             <div>
-                <p class="text-xs font-black text-emerald-600 uppercase tracking-widest">
-                    Digital Health Identity Verified
-                </p>
-                <h2 class="text-3xl font-black text-slate-900 mt-2">
-                    Patient Details
-                </h2>
-                <p class="text-sm text-slate-500 mt-2">
-                    Your registered health information has been retrieved.
-                </p>
+                <p class="text-xs font-black text-emerald-600 uppercase tracking-widest">Digital Health Identity Verified</p>
+                <h2 class="text-3xl font-black text-slate-900 mt-2">Patient Details</h2>
             </div>
-
             <div class="bg-slate-50 border border-slate-200 rounded-3xl p-5 text-left space-y-3">
-                <div class="flex justify-between border-b border-slate-200 pb-2">
-                    <span class="text-xs font-bold text-slate-400 uppercase">Patient Name</span>
-                    <span id="nfc-patient-name" class="text-sm font-black">--</span>
-                </div>
-                <div class="flex justify-between border-b border-slate-200 pb-2">
-                    <span class="text-xs font-bold text-slate-400 uppercase">Age / Gender</span>
-                    <span id="nfc-patient-age" class="text-sm font-black">--</span>
-                </div>
-                <div class="flex justify-between border-b border-slate-200 pb-2">
-                    <span class="text-xs font-bold text-slate-400 uppercase">Phone Number</span>
-                    <span id="nfc-patient-phone" class="text-sm font-black">--</span>
-                </div>
-                <div class="flex justify-between border-b border-slate-200 pb-2">
-                    <span class="text-xs font-bold text-slate-400 uppercase">ABHA / Patient ID</span>
-                    <span id="nfc-patient-id" class="text-sm font-black">--</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-xs font-bold text-slate-400 uppercase">Health Records</span>
-                    <span id="nfc-patient-history-tag" class="text-xs font-bold text-blue-600">--</span>
-                </div>
+                <div class="flex justify-between border-b pb-2"><span class="text-xs font-bold text-slate-400">NAME</span><span id="nfc-patient-name" class="text-sm font-black">--</span></div>
+                <div class="flex justify-between border-b pb-2"><span class="text-xs font-bold text-slate-400">AGE / GENDER</span><span id="nfc-patient-age" class="text-sm font-black">--</span></div>
+                <div class="flex justify-between border-b pb-2"><span class="text-xs font-bold text-slate-400">PHONE</span><span id="nfc-patient-phone" class="text-sm font-black">--</span></div>
+                <div class="flex justify-between border-b pb-2"><span class="text-xs font-bold text-slate-400">ID / ABHA</span><span id="nfc-patient-id" class="text-sm font-black">--</span></div>
             </div>
-
-            <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
-                <p class="text-xs font-bold text-emerald-700">
-                    ✓ Identity Verified via ABDM / MediKiosk Registry
-                </p>
-                <p id="nfc-card-uid-display" class="text-[10px] text-emerald-600 mt-1 font-mono">
-                    Card / ABHA ID: --
-                </p>
-            </div>
-
-            <button onclick="event.stopPropagation(); continueFromPatientDetails()"
-                class="w-full orange-card text-white p-5 rounded-2xl font-black text-lg shadow-lg hover:scale-[1.02] transition flex items-center justify-center gap-2">
-                Continue to Intake
-                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+            <button onclick="continueFromPatientDetails()" class="w-full orange-card text-white p-5 rounded-2xl font-black text-lg shadow-lg hover:scale-[1.02] transition">
+                Continue to Intake ➔
             </button>
         </section>
 
-        <!-- ========================================================
-             LANGUAGE SELECTION
-        ======================================================== -->
-
+        <!-- LANGUAGE SELECTION -->
         <section id="lang-page" class="hidden w-full text-center space-y-8 my-auto max-w-xl">
-            <h1 class="text-4xl font-black">
-                Select Language / भाषा चुनें
-            </h1>
-
+            <h1 class="text-4xl font-black">Select Language / भाषा चुनें</h1>
             <div class="grid grid-cols-2 gap-6">
-                <button type="button" onclick="event.stopPropagation(); selectLanguage('en')"
-                    class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">
-                    English
-                </button>
-
-                <button type="button" onclick="event.stopPropagation(); selectLanguage('hi')"
-                    class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">
-                    हिंदी
-                </button>
+                <button type="button" onclick="selectLanguage('en')" class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">English</button>
+                <button type="button" onclick="selectLanguage('hi')" class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">हिंदी</button>
             </div>
         </section>
 
-        <!-- ========================================================
-             LANDING (CONSULTATION MODE)
-        ======================================================== -->
-
+        <!-- LANDING PAGE -->
         <section id="landing-page" class="hidden w-full text-center space-y-8 my-auto max-w-2xl">
-            <h1 class="text-4xl font-black text-orange-600">
-                Welcome To MediKiosk
-            </h1>
-
-            <p id="consultation-subtitle" class="text-xs text-slate-500">
-                Choose your consultation mode.
-            </p>
-
+            <h1 class="text-4xl font-black text-orange-600">Welcome To MediKiosk</h1>
             <div class="grid grid-cols-2 gap-6">
-                <button type="button" onclick="event.stopPropagation(); openVoiceMode()"
-                    class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
-                    <i data-lucide="mic" class="w-8 h-8 mx-auto"></i>
-                    <div>Voice Consultation</div>
-                </button>
-
-                <button type="button" onclick="event.stopPropagation(); openChatMode()"
-                    class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
+                <button type="button" onclick="openChatMode()" class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
                     <i data-lucide="message-square" class="w-8 h-8 mx-auto"></i>
                     <div>Text Consultation</div>
                 </button>
+                <button type="button" onclick="openVoiceMode()" class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
+                    <i data-lucide="mic" class="w-8 h-8 mx-auto"></i>
+                    <div>Voice Consultation</div>
+                </button>
             </div>
         </section>
 
-        <!-- ========================================================
-             VOICE PAGE
-        ======================================================== -->
-
-        <section id="voice-page"
-            class="hidden w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
-
-            <button type="button" onclick="event.stopPropagation(); goBackToWelcome()"
-                class="text-xs text-orange-600 font-bold flex items-center gap-1">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                Back
-            </button>
-
-            <h2 class="text-2xl font-black">
-                Voice Consultation Active
-            </h2>
-
-            <button id="mic-btn" type="button" onclick="event.stopPropagation(); toggleMicRecording()"
-                class="w-32 h-32 orange-card text-white rounded-full flex flex-col items-center justify-center mx-auto shadow-xl transition hover:scale-105">
-                <i data-lucide="mic" class="w-12 h-12"></i>
-                <span id="mic-status" class="text-[10px] font-bold mt-1 uppercase">
-                    Tap Mic to Speak
-                </span>
-            </button>
-
-            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left space-y-3">
-                <div>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">
-                        You Said:
-                    </span>
-                    <p id="voice-user-text" class="text-slate-700 font-semibold italic text-sm">
-                        "Tap microphone and speak..."
-                    </p>
-                </div>
-
-                <div class="border-t border-slate-200 pt-3">
-                    <span class="text-[10px] font-bold text-orange-500 uppercase">
-                        AI Assistant:
-                    </span>
-                    <p id="voice-ai-text" class="text-orange-950 font-bold text-sm">
-                        "Waiting for your speech..."
-                    </p>
-                </div>
-
-                <div id="voice-routing-info" class="hidden border-t border-slate-200 pt-3 text-xs">
-                </div>
-            </div>
-
-        </section>
-
-        <!-- ========================================================
-             CHAT PAGE
-        ======================================================== -->
-
+        <!-- CHAT PAGE WITH INTEGRATED SILHOUETTE MAP -->
         <section id="chat-page" class="hidden w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            <div id="chat-container"
-                class="lg:col-span-3 bg-white border border-slate-200 rounded-3xl shadow-xl flex flex-col h-[650px] overflow-hidden">
-
+            <div id="chat-container" class="lg:col-span-2 bg-white border border-slate-200 rounded-3xl shadow-xl flex flex-col h-[650px] overflow-hidden">
                 <div class="bg-slate-900 text-white p-4 px-6 flex justify-between items-center">
                     <div class="flex items-center space-x-3">
-                        <button type="button" onclick="event.stopPropagation(); goBackToWelcome()"
-                            class="text-slate-400 hover:text-white">
-                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                        </button>
+                        <button type="button" onclick="goBackToWelcome()" class="text-slate-400 hover:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
                         <div>
-                            <h3 class="font-bold text-sm">MediKiosk Assistant</h3>
-                            <p id="patient-identity-subtitle" class="text-[11px] text-orange-400">Online</p>
+                            <h3 class="font-bold text-sm">MediKiosk AI Assistant</h3>
+                            <p id="patient-identity-subtitle" class="text-[11px] text-orange-400">Groq AI Active</p>
                         </div>
-                    </div>
-
-                    <div id="patient-token-badge"
-                        class="hidden bg-orange-500/20 border border-orange-500/50 px-3 py-1 rounded-xl">
-                        <span class="text-[9px] text-orange-300 font-bold block uppercase">OPD Token</span>
-                        <span id="token-badge-number" class="text-sm font-black text-orange-400">#---</span>
                     </div>
                 </div>
 
                 <div id="chat-box" class="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50"></div>
 
                 <div id="chat-input-area" class="p-4 bg-white border-t border-slate-100">
-                    <form id="chat-form" onsubmit="event.stopPropagation(); handleChatSubmit(event)"
-                        class="flex items-center gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200">
-                        <input type="text" id="chat-input" placeholder="Type your problem here..." autocomplete="off"
-                            required class="flex-1 bg-transparent px-4 py-2 text-sm text-slate-800 focus:outline-none">
-                        <button type="submit" class="orange-card text-white p-3 rounded-xl">
-                            <i data-lucide="send" class="w-4 h-4"></i>
-                        </button>
+                    <form id="chat-form" onsubmit="handleChatSubmit(event)" class="flex items-center gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200">
+                        <input type="text" id="chat-input" placeholder="Type symptoms or select body region..." autocomplete="off" required class="flex-1 bg-transparent px-4 py-2 text-sm text-slate-800 focus:outline-none">
+                        <button type="submit" class="orange-card text-white p-3 rounded-xl"><i data-lucide="send" class="w-4 h-4"></i></button>
                     </form>
                 </div>
             </div>
 
-            <!-- BODY PANEL -->
-            <div id="side-body-panel"
-                class="hidden lg:hidden bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex-col items-center justify-between space-y-4 shadow-xl">
+            <!-- INTERACTIVE BODY SILHOUETTE (ALWAYS READY) -->
+            <div id="side-body-panel" class="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex flex-col items-center justify-between space-y-4 shadow-xl">
                 <div class="text-center">
                     <h3 class="text-sm font-black">Interactive Body Silhouette</h3>
-                    <p class="text-[11px] text-slate-400">Tap affected area</p>
+                    <p class="text-[11px] text-slate-400">Tap affected area to mark pain site</p>
                 </div>
 
                 <div class="relative w-40 h-80 flex justify-center items-center">
@@ -540,258 +228,146 @@
                     <p id="selected-site-tag" class="text-xs font-bold text-orange-400">General</p>
                 </div>
             </div>
-
         </section>
 
     </main>
 
-    <!-- ============================================================
-         FOOTER
-    ============================================================ -->
-
     <footer class="text-center text-xs text-slate-400 py-3 border-t border-slate-100">
-        MediKiosk Patient Terminal
-        <span class="ml-2 text-slate-300">• Backend Connected</span>
+        MediKiosk Patient Terminal • Backend Connected
     </footer>
 
-
     <script>
-        /* ============================================================
-           API
-        ============================================================ */
-        const IS_LOCAL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "";
-
-        const BASE_API_URL = IS_LOCAL
+        const BASE_API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
             ? "http://127.0.0.1:8000"
-            : "https://medikiosk-backend-8rs2.onrender.com";
+            : "https://medikiosk-backend-8r.onrender.com";
 
-        const WS_URL = IS_LOCAL
-            ? "ws://127.0.0.1:8000/ws/kiosk"
-            : "wss://medikiosk-backend-8rs2.onrender.com/ws/kiosk";
-
-        /* ============================================================
-           STATE
-        ============================================================ */
         let currentLang = "en";
         let chatMemory = [];
         let patientDetails = {};
         let selectedPainSite = "General";
 
-        let clinicalInformation = {
-            duration: "",
-            severity: "",
-            pain_site: "General"
-        };
-
-        let clinicalStep = "problem";
-        let initialProblemMessage = "";
-        let stepIndex = 1;
-        let isNfcMode = false;
-        let isInitialProblemSubmitted = false;
-
-        let audioCtx = null;
-        let voiceGuideEnabled = true;
-        let initialPromptSpoken = false;
-
-        let countdownTimer = null;
-        let countdownStarted = false;
-
-        let socket = null;
-        let recognition = null;
-        let isRecording = false;
-
-        /* ============================================================
-           ABHA SIMULATOR HANDLERS
-        ============================================================ */
-        function openAbhaModal() {
-            document.getElementById('abha-modal').classList.remove('hidden');
-            document.getElementById('abha-step-1').classList.remove('hidden');
-            document.getElementById('abha-step-2').classList.add('hidden');
-        }
-
-        function closeAbhaModal() {
-            document.getElementById('abha-modal').classList.add('hidden');
-        }
-
-        function openNfcManualModal() {
-            document.getElementById('nfc-modal').classList.remove('hidden');
-        }
-
-        function closeNfcManualModal() {
-            document.getElementById('nfc-modal').classList.add('hidden');
-        }
+        function handleFirstClick() {}
+        function openAbhaModal() { document.getElementById('abha-modal').classList.remove('hidden'); }
+        function closeAbhaModal() { document.getElementById('abha-modal').classList.add('hidden'); }
+        function openNfcManualModal() { document.getElementById('nfc-modal').classList.remove('hidden'); }
+        function closeNfcManualModal() { document.getElementById('nfc-modal').classList.add('hidden'); }
 
         function submitManualNfc() {
             const val = document.getElementById('manual-nfc-input').value.trim();
-            if (!val) return alert("Please enter NFC or Health Card ID");
             closeNfcManualModal();
-            handleNfcCardLoaded({
-                patient_name: "Ramesh Kumar",
-                age: 45,
-                phone: "9876543210",
-                patient_id: val,
-                gender: "Male"
-            }, val);
+            handleNfcCardLoaded({ patient_name: "Ramesh Kumar", age: 45, phone: "9876543210", patient_id: val, gender: "Male" }, val);
         }
 
         function requestAbhaOtp() {
-            const abhaVal = document.getElementById('abha-input').value.trim();
-            if (!abhaVal) return alert("Please enter a valid ABHA Number or ABHA Address");
-
             document.getElementById('abha-step-1').classList.add('hidden');
             document.getElementById('abha-step-2').classList.remove('hidden');
-            speakText("OTP sent to your registered mobile number. Please enter 123456.");
         }
 
         function verifyAbhaOtp() {
-            const otp = document.getElementById('abha-otp-input').value.trim();
-            if (otp !== "123456") return alert("Invalid Demo OTP. Please enter 123456");
-
             closeAbhaModal();
-
-            const mockAbhaData = {
-                patient_name: "Ramesh Kumar (ABHA)",
-                age: 45,
-                gender: "Male",
-                phone: "9876543210",
-                patient_id: "ABHA-14-9876-5432",
-                blood_group: "B+",
-                past_history: "Hypertension, Type 2 Diabetes"
-            };
-
-            handleNfcCardLoaded(mockAbhaData, "ABHA-14-9876-5432");
-        }
-
-        /* ============================================================
-           AUDIO & HELPERS
-        ============================================================ */
-        function unlockAudio() {
-            try {
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === "suspended") audioCtx.resume();
-            } catch (e) {}
-        }
-
-        function handleFirstClick() {
-            unlockAudio();
-        }
-
-        function speakText(text, mode = "normal") {
-            if (!voiceGuideEnabled || !("speechSynthesis" in window)) return;
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = currentLang === "hi" ? "hi-IN" : "en-IN";
-            utterance.rate = 0.92;
-            window.speechSynthesis.speak(utterance);
-        }
-
-        function toggleVoiceGuide() {
-            voiceGuideEnabled = !voiceGuideEnabled;
-            const btn = document.getElementById("voice-guide-btn");
-            const text = document.getElementById("speaker-text");
-            if (voiceGuideEnabled) {
-                btn?.classList.add("orange-card");
-                if (text) text.innerText = "Voice Guide: ON";
-            } else {
-                window.speechSynthesis.cancel();
-                btn?.classList.remove("orange-card");
-                if (text) text.innerText = "Voice Guide: OFF";
-            }
+            handleNfcCardLoaded({ patient_name: "Ramesh Kumar (ABHA)", age: 45, gender: "Male", phone: "9876543210", patient_id: "ABHA-14-9876-5432" }, "ABHA-14-9876-5432");
         }
 
         function handleNfcCardLoaded(details, cardUid) {
-            unlockAudio();
-            isNfcMode = true;
             patientDetails = details || {};
-
-            document.getElementById("nfc-page")?.classList.add("hidden");
-            document.getElementById("patient-details-page")?.classList.remove("hidden");
+            document.getElementById("nfc-page").classList.add("hidden");
+            document.getElementById("patient-details-page").classList.remove("hidden");
 
             document.getElementById("nfc-patient-name").innerText = details?.patient_name || "--";
             document.getElementById("nfc-patient-age").innerText = `${details?.age || '--'} yrs • ${details?.gender || 'Male'}`;
             document.getElementById("nfc-patient-phone").innerText = details?.phone || "--";
             document.getElementById("nfc-patient-id").innerText = details?.patient_id || "--";
-            document.getElementById("nfc-patient-history-tag").innerText = details?.past_history || "No Past History";
-            document.getElementById("nfc-card-uid-display").innerText = `ID / ABHA: ${cardUid || "--"}`;
-
-            speakText(`Welcome ${details?.patient_name}. Information verified.`);
         }
 
         function continueFromPatientDetails() {
-            document.getElementById("patient-details-page")?.classList.add("hidden");
-            document.getElementById("lang-page")?.classList.remove("hidden");
+            document.getElementById("patient-details-page").classList.add("hidden");
+            document.getElementById("lang-page").classList.remove("hidden");
         }
 
         function selectLanguage(lang) {
             currentLang = lang;
-            document.getElementById("lang-page")?.classList.add("hidden");
-            document.getElementById("landing-page")?.classList.remove("hidden");
+            document.getElementById("lang-page").classList.add("hidden");
+            document.getElementById("landing-page").classList.remove("hidden");
         }
 
         function openChatMode() {
-            document.getElementById("landing-page")?.classList.add("hidden");
-            document.getElementById("chat-page")?.classList.remove("hidden");
+            document.getElementById("landing-page").classList.add("hidden");
+            document.getElementById("chat-page").classList.remove("hidden");
 
             const chatBox = document.getElementById("chat-box");
             chatBox.innerHTML = `
                 <div class="flex items-start space-x-3">
                     <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black">AI</div>
                     <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-md">
-                        Hello ${patientDetails?.patient_name || 'Patient'}! Welcome to MediKiosk. Please describe your symptoms or health issue.
+                        Hello ${patientDetails?.patient_name || 'Patient'}! I am MediKiosk Groq AI Assistant. Please describe your health problem.
                     </div>
                 </div>
             `;
-        }
-
-        function openVoiceMode() {
-            document.getElementById("landing-page")?.classList.add("hidden");
-            document.getElementById("voice-page")?.classList.remove("hidden");
+            chatMemory.push({ sender: "assistant", text: "Hello! Describe your health problem." });
         }
 
         function goBackToWelcome() {
-            document.getElementById("voice-page")?.classList.add("hidden");
-            document.getElementById("chat-page")?.classList.add("hidden");
-            document.getElementById("landing-page")?.classList.remove("hidden");
+            document.getElementById("chat-page").classList.add("hidden");
+            document.getElementById("landing-page").classList.remove("hidden");
+        }
+
+        function highlightPart(siteName, element) {
+            document.querySelectorAll(".body-part").forEach(el => el.classList.remove("active"));
+            if (element) element.classList.add("active");
+            selectedPainSite = siteName;
+            document.getElementById("selected-site-tag").innerText = siteName;
         }
 
         async function handleChatSubmit(e) {
             if (e) e.preventDefault();
             const input = document.getElementById("chat-input");
-            const val = input.value.trim();
-            if (!val) return;
+            const userMsg = input.value.trim();
+            if (!userMsg) return;
 
             const chatBox = document.getElementById("chat-box");
             chatBox.innerHTML += `
                 <div class="flex items-start justify-end space-x-3">
-                    <div class="bubble-user text-white p-4 rounded-2xl text-xs max-w-md">${val}</div>
+                    <div class="bubble-user text-white p-4 rounded-2xl text-xs max-w-md">${userMsg}</div>
                 </div>
             `;
+            chatMemory.push({ sender: "user", text: userMsg });
             input.value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
 
             try {
-                const res = await fetch(`${BASE_API_URL}/api/nfc/tap`, {
+                const res = await fetch(`${BASE_API_URL}/api/chat/ai-assistant`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ card_id: "CARD5678" })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_message: userMsg,
+                        chat_history: chatMemory,
+                        language: currentLang,
+                        patient_details: patientDetails,
+                        pain_site: selectedPainSite
+                    })
                 });
+
+                const data = await res.json();
+                chatMemory.push({ sender: "assistant", text: data.reply });
 
                 chatBox.innerHTML += `
                     <div class="flex items-start space-x-3">
-                        <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black">AI</div>
-                        <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-md">
-                            Thank you. Your symptoms have been registered and routed to Clinical Triage. Token generated.
-                        </div>
+                        <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black flex-shrink-0">AI</div>
+                        <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-md">${data.reply}</div>
                     </div>
                 `;
+
+                if (data.is_red_flag) {
+                    document.getElementById('red-flag-banner').classList.remove('hidden');
+                }
+
+                chatBox.scrollTop = chatBox.scrollHeight;
             } catch (err) {
-                console.error(err);
+                console.error("AI Error:", err);
             }
         }
 
-        window.addEventListener("load", () => {
-            lucide.createIcons();
-        });
+        window.addEventListener("load", () => { lucide.createIcons(); });
     </script>
 </body>
-
 </html>
