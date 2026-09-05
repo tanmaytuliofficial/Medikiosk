@@ -205,6 +205,12 @@
                             <p class="text-[11px] text-orange-400">Interactive Clinical Triage Active</p>
                         </div>
                     </div>
+
+                    <!-- VISIBLE OPD TOKEN BADGE -->
+                    <div id="patient-token-badge" class="bg-orange-500/20 border border-orange-500/50 px-3 py-1.5 rounded-xl flex items-center gap-2">
+                        <span class="text-[10px] text-orange-300 font-bold uppercase">OPD TOKEN:</span>
+                        <span id="token-badge-number" class="text-sm font-black text-orange-400">#TK-104</span>
+                    </div>
                 </div>
 
                 <div id="chat-box" class="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50"></div>
@@ -257,7 +263,7 @@
         let patientDetails = {};
         let selectedPainSite = "General";
         let voiceGuideEnabled = true;
-        let triageStep = 0; // 0: initial, 1: duration, 2: severity, 3: completed
+        let triageStep = 0;
 
         function openAbhaModal() { document.getElementById('abha-modal').classList.remove('hidden'); }
         function closeAbhaModal() { document.getElementById('abha-modal').classList.add('hidden'); }
@@ -347,16 +353,25 @@
             document.getElementById("landing-page").classList.remove("hidden");
         }
 
+        // AUTO-DETECT SYMPTOMS & MAP TO BODY PART
+        function autoDetectBodyPart(text) {
+            const lower = text.toLowerCase();
+            if (lower.includes("head") || lower.includes("headache") || lower.includes("brain") || lower.includes("fever")) {
+                highlightPart('Head', document.getElementById('part-head'));
+            } else if (lower.includes("chest") || lower.includes("heart") || lower.includes("breath")) {
+                highlightPart('Chest', document.getElementById('part-chest'));
+            } else if (lower.includes("stomach") || lower.includes("abdomen") || lower.includes("belly")) {
+                highlightPart('Abdomen', document.getElementById('part-abdomen'));
+            } else if (lower.includes("leg") || lower.includes("arm") || lower.includes("hand")) {
+                highlightPart('Limbs', document.getElementById('part-arm-left'));
+            }
+        }
+
         function highlightPart(siteName, element) {
             document.querySelectorAll(".body-part").forEach(el => el.classList.remove("active"));
             if (element) element.classList.add("active");
             selectedPainSite = siteName;
             document.getElementById("selected-site-tag").innerText = siteName;
-
-            const input = document.getElementById("chat-input");
-            if (input) {
-                input.value = `I have pain in my ${siteName.toLowerCase()}`;
-            }
         }
 
         function appendQuickOptions(optionsArray) {
@@ -384,6 +399,8 @@
             const userMsg = input.value.trim();
             if (!userMsg) return;
 
+            autoDetectBodyPart(userMsg);
+
             const chatBox = document.getElementById("chat-box");
             chatBox.innerHTML += `
                 <div class="flex items-start justify-end space-x-3">
@@ -398,7 +415,6 @@
             let pollOptions = [];
             let isRedFlag = false;
 
-            // RED FLAG CHECK
             if (userMsg.toLowerCase().includes("chest pain") || userMsg.toLowerCase().includes("breath") || userMsg.toLowerCase().includes("unconscious")) {
                 isRedFlag = true;
             }
@@ -424,7 +440,6 @@
                     throw new Error("Server error");
                 }
             } catch (err) {
-                // FALLBACK INTERACTIVE TRIAGE ENGINE
                 if (triageStep === 0) {
                     aiReply = `I understand you have ${userMsg}. How long have you been experiencing this issue?`;
                     pollOptions = ["Since Today", "2-3 Days", "1 Week", "More than 1 Month"];
@@ -433,9 +448,13 @@
                     aiReply = `Got it. On a scale of severity, how intense is the discomfort right now?`;
                     pollOptions = ["Mild (1-3)", "Moderate (4-6)", "Severe (7-10)"];
                     triageStep = 2;
-                } else {
-                    aiReply = `Thank you. Your clinical intake details for (${selectedPainSite}) have been recorded and sent to the Doctor. Token Generated.`;
+                } else if (triageStep === 2) {
+                    aiReply = `Are you experiencing any accompanying symptoms like nausea, fever, or dizziness?`;
+                    pollOptions = ["Nausea / Vomiting", "Fever", "Dizziness", "None of these"];
                     triageStep = 3;
+                } else {
+                    aiReply = `Thank you Ramesh Kumar. Your clinical intake details for (${selectedPainSite}) have been recorded. OPD Token #TK-104 is generated. Please proceed to Waiting Area.`;
+                    triageStep = 4;
                 }
             }
 
