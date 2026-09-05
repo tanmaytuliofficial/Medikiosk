@@ -20,7 +20,6 @@ app.add_middleware(
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
-# ⚡ SUPABASE DATABASE INITIALIZATION
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://kosmrpnsudxwvqxejbzs.supabase.co")
 SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvc21ycG5zdWR4d3ZxeGVqYnpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NDkyNzUsImV4cCI6MjEwNDAyNTI3NX0.HNmz8QveUDUhldjpUwNP1zhRiTAOm5wrbELPyCya8T0")
 
@@ -31,7 +30,6 @@ try:
 except Exception as e:
     print(f"Supabase init warning: {e}")
 
-# --- PYDANTIC SCHEMAS ---
 class ChatRequest(BaseModel):
     user_message: str
     chat_history: List[dict] = []
@@ -58,37 +56,35 @@ ARCHIVED_RECORDS = []
 active_connections: List[WebSocket] = []
 CURRENT_TOKEN_COUNTER = 101
 
-# --- HELPER FUNCTIONS ---
-def clean_patient_name(raw_text: str) -> str:
-    cleaned = raw_text.strip()
-    prefixes = [
-        r"^my name is\s+", r"^i am\s+", r"^this is\s+",
-        r"^mera naam\s+", r"^naam hai\s+", r"^main\s+"
-    ]
-    for pattern in prefixes:
-        cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE)
-    cleaned = re.sub(r"\shai$", "", cleaned, flags=re.IGNORECASE).strip()
-    return cleaned.title() if cleaned else raw_text.title()
-
 CLINICAL_SYSTEM_PROMPT = """
-You are MediKiosk AI, an expert clinical intake assistant.
-Language: Respond strictly in {lang}.
+You are MediKiosk AI, an expert clinical triage assistant conducting a thorough medical intake.
+Patient Details Already Known:
+Name: {patient_name}
+Age: {age}
+Phone: {phone}
+Gender: {gender}
+Blood Group: {blood_group}
+Past Medical History / Existing Conditions: {past_history}
 
-Your task is to ask a follow-up medical question AND provide 4 relevant quick-response options for the patient.
+Strict Response Language: {lang}.
+
+INSTRUCTIONS:
+1. DO NOT ask for demographics like Name, Age, Gender, or Mobile Number (they are already verified).
+2. Ask focused, clinical, diagnostic follow-up questions one by one (Aim for 5-6 total interactive turns to gather full symptom history: duration, severity 1-10, trigger factors, associated symptoms like fever/nausea, past episodes).
+3. Always provide 4 relevant quick-response options for the patient in poll_options.
+4. When you have sufficient clinical details (around 5-6 questions answered) OR if intake is concluding, say "Clinical intake complete! Token generated." in the reply text.
+5. If red flag/emergency symptoms occur (e.g. chest pain, severe breathlessness, stroke, heavy bleeding), include "[RED_FLAG_ALERT]" in the reply string.
 
 STRICT JSON OUTPUT FORMAT ONLY:
 {{
-  "reply": "Your concise clinical follow-up question here",
+  "reply": "Your concise clinical question here",
   "poll_options": [
-    {{"label": "Option 1 Text", "value": "Option 1 Text"}},
-    {{"label": "Option 2 Text", "value": "Option 2 Text"}},
-    {{"label": "Option 3 Text", "value": "Option 3 Text"}},
-    {{"label": "Option 4 Text", "value": "Option 4 Text"}}
+    {{"label": "Option 1", "value": "Option 1"}},
+    {{"label": "Option 2", "value": "Option 2"}},
+    {{"label": "Option 3", "value": "Option 3"}},
+    {{"label": "Option 4", "value": "Option 4"}}
   ]
 }}
-
-If red flag/emergency symptoms occur, include "[RED_FLAG_ALERT]" in the reply string.
-DO NOT output any text outside this JSON block.
 """
 
 class ConnectionManager:
@@ -109,7 +105,6 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# --- WEBSOCKET ENDPOINT ---
 @app.websocket("/ws/doctor-updates")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
@@ -119,7 +114,6 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
-# --- 💳 NFC TAP ENDPOINT ---
 @app.post("/api/nfc/tap")
 async def nfc_tap_handler(payload: NFCTapRequest):
     scanned_uid = payload.nfc_uid.strip().upper() if payload.nfc_uid else "DEMO99887766"
@@ -129,13 +123,19 @@ async def nfc_tap_handler(payload: NFCTapRequest):
             res = supabase.table("users").select("*").eq("nfc_uid", scanned_uid).execute()
             if res.data and len(res.data) > 0:
                 user = res.data[0]
+                
+                # Fetch past medical history records for Doctor & Groq AI
+                history_res = supabase.table("medical_history").select("*").eq("nfc_uid", scanned_uid).execute()
+                past_records = history_res.data if history_res.data else []
+
                 return {
                     "success": True,
                     "user_type": "EXISTING_USER",
-                    "data": user
+                    "data": user,
+                    "past_history": past_records
                 }
     except Exception as e:
-        print(f"NFC DB Lookup Bypassed: {e}")
+        print(f"NFC DB Lookup Warning: {e}")
 
     return {
         "success": True,
@@ -143,7 +143,6 @@ async def nfc_tap_handler(payload: NFCTapRequest):
         "data": {"nfc_uid": scanned_uid}
     }
 
-# --- 📝 NFC PATIENT REGISTRATION ENDPOINT (SINGLE CLEANED ROUTE) ---
 @app.post("/api/nfc/register")
 async def register_nfc_patient(payload: NFCRegisterRequest):
     clean_uid = payload.nfc_uid.strip().upper()
@@ -169,7 +168,7 @@ async def register_nfc_patient(payload: NFCRegisterRequest):
             else:
                 supabase.table("users").insert(user_data).execute()
         except Exception as db_err:
-            print(f"Supabase registration error (bypassed): {db_err}")
+            print(f"Supabase registration error: {db_err}")
 
     return {
         "success": True,
@@ -177,7 +176,6 @@ async def register_nfc_patient(payload: NFCRegisterRequest):
         "data": user_data
     }
 
-# --- 🤖 CLINICAL AI CHAT ENDPOINT ---
 @app.post("/api/chat/ai-assistant")
 async def clinical_ai_chat(payload: ChatRequest):
     global CURRENT_TOKEN_COUNTER
@@ -188,30 +186,12 @@ async def clinical_ai_chat(payload: ChatRequest):
     details = payload.patient_details or {}
     selected_site = payload.pain_site or "General"
 
-    user_msgs = [m.get("text") for m in history if m.get("sender") == "user"]
-    user_msg_count = len(user_msgs)
-
     # Red-Flag Detection
     msg_lower = user_msg.lower()
     red_flag_keywords = ["chest pain", "chhati me dard", "saans lene me dikkat", "stroke", "severe bleeding", "heavy bleeding", "bleeding", "accident", "trauma", "unconscious"]
     is_emergency = any(kw in msg_lower for kw in red_flag_keywords)
 
-    # Demographic Extraction
-    if user_msg_count >= 1 and not details.get("patient_name"):
-        details["patient_name"] = clean_patient_name(user_msgs[0])
-
-    if user_msg_count >= 2 and not details.get("age"):
-        age_match = re.search(r'\b(\d{1,2})\b', user_msgs[1])
-        details["age"] = age_match.group(1) if age_match else user_msgs[1].strip()
-
-    if user_msg_count >= 3 and not details.get("phone"):
-        phone_match = re.search(r'\b(\d{10})\b', user_msgs[2])
-        details["phone"] = phone_match.group(1) if phone_match else "Not Provided"
-
-    if user_msg_count >= 4 and not details.get("chief_complaint"):
-        details["chief_complaint"] = user_msgs[3].strip()
-
-    # Pain Site Detection
+    # Pain Site Auto-Detection
     if any(w in msg_lower for w in ["head", "sir", "sar", "headache", "matha", "migraine"]):
         selected_site = "Head"
     elif any(w in msg_lower for w in ["stomach", "pet", "belly", "abdomen", "gastric", "acidity", "vomit"]):
@@ -229,10 +209,19 @@ async def clinical_ai_chat(payload: ChatRequest):
     if is_emergency:
         ai_reply = "🚨 EMERGENCY DETECTED! Intake terminated. Priority token assigned!" if lang == 'en' else "🚨 आपातकालीन स्थिति! आगे के प्रश्न रोके गए। प्राथमिकता टोकन जारी कर दिया गया है!"
     else:
-        # Dynamic AI Call using Groq LLM
-        if user_msg_count >= 4 and GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_"):
+        # Groq Clinical AI Generation
+        if GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_"):
             try:
-                formatted_prompt = CLINICAL_SYSTEM_PROMPT.format(lang="Hindi" if lang == "hi" else "English")
+                formatted_prompt = CLINICAL_SYSTEM_PROMPT.format(
+                    patient_name=details.get("patient_name", "Unknown"),
+                    age=details.get("age", "Unknown"),
+                    phone=details.get("phone", "Unknown"),
+                    gender=details.get("gender", "Unknown"),
+                    blood_group=details.get("blood_group", "Unknown"),
+                    past_history=json.dumps(details.get("past_history", [])),
+                    lang="Hindi" if lang == "hi" else "English"
+                )
+
                 messages = [{"role": "system", "content": formatted_prompt}]
                 
                 for msg in history:
@@ -249,7 +238,7 @@ async def clinical_ai_chat(payload: ChatRequest):
                     "temperature": 0.2,
                     "response_format": {"type": "json_object"}
                 }
-                res = requests.post(url, headers=headers, json=body, timeout=6)
+                res = requests.post(url, headers=headers, json=body, timeout=8)
                 if res.status_code == 200:
                     json_res = json.loads(res.json()["choices"][0]["message"]["content"])
                     ai_reply = json_res.get("reply", "")
@@ -258,20 +247,27 @@ async def clinical_ai_chat(payload: ChatRequest):
                         is_emergency = True
                         ai_reply = ai_reply.replace("[RED_FLAG_ALERT]", "").strip()
             except Exception as e:
-                print("Groq AI Error:", e)
+                print("Groq AI Engine Error:", e)
 
-        # Fallback Intake Flow
+        # Fallback Dynamic Diagnostic Response if AI key missing/fails
         if not ai_reply:
-            if user_msg_count == 1:
-                ai_reply = "What is your Age?" if lang == 'en' else "आपकी उम्र कितनी है?"
-            elif user_msg_count == 2:
-                ai_reply = "Please enter your 10-digit Mobile Number." if lang == 'en' else "कृपया अपना 10 अंकों का मोबाइल नंबर दर्ज करें।"
-            elif user_msg_count == 3:
-                ai_reply = "What main health problem brings you to the hospital today?" if lang == 'en' else "आज आप किस मुख्य स्वास्थ्य समस्या या लक्षण के इलाज के लिए आए हैं?"
+            user_turns = len([m for m in history if m.get("sender") == "user"])
+            if user_turns == 0:
+                ai_reply = "How long have you been experiencing this symptom?" if lang == 'en' else "आपको यह लक्षण कितने समय से महसूस हो रहा है?"
+                poll_options = [{"label": "Since Today", "value": "Since Today"}, {"label": "2-3 Days", "value": "2-3 Days"}, {"label": "1 Week", "value": "1 Week"}, {"label": "More than a month", "value": "More than a month"}]
+            elif user_turns == 1:
+                ai_reply = "On a scale of 1 to 10, how severe is your pain or discomfort?" if lang == 'en' else "1 से 10 के पैमाने पर, आपका दर्द कितना गंभीर है?"
+                poll_options = [{"label": "Mild (1-3)", "value": "Mild (1-3)"}, {"label": "Moderate (4-6)", "value": "Moderate (4-6)"}, {"label": "Severe (7-9)", "value": "Severe (7-9)"}, {"label": "Unbearable (10)", "value": "Unbearable (10)"}]
+            elif user_turns == 2:
+                ai_reply = "Do you have any associated symptoms like fever, nausea, or dizziness?" if lang == 'en' else "क्या आपको बुखार, जी मिचलाना या चक्कर आने जैसे अन्य लक्षण भी हैं?"
+                poll_options = [{"label": "Fever", "value": "Fever"}, {"label": "Nausea / Vomiting", "value": "Nausea / Vomiting"}, {"label": "Dizziness", "value": "Dizziness"}, {"label": "None of these", "value": "None"}]
+            elif user_turns == 3:
+                ai_reply = "Are you currently taking any prescription medications for this issue?" if lang == 'en' else "क्या आप वर्तमान में इस समस्या के लिए कोई दवा ले रहे हैं?"
+                poll_options = [{"label": "Painkillers", "value": "Painkillers"}, {"label": "Antibiotics", "value": "Antibiotics"}, {"label": "Regular BP/Diabetes meds", "value": "Regular BP/Diabetes meds"}, {"label": "No medication", "value": "No medication"}]
             else:
                 ai_reply = "Clinical intake complete! Token generated." if lang == 'en' else "नैदानिक चेक-इन पूरा हुआ! टोकन जनरेट हो गया है।"
 
-    # Assign Token
+    # Assign OPD Token
     existing_patient = next((r for r in PATIENT_RECORDS if r.get("patient_name") == details.get("patient_name")), None)
     if existing_patient:
         assigned_token = existing_patient["token"]
@@ -284,14 +280,34 @@ async def clinical_ai_chat(payload: ChatRequest):
         "patient_name": details.get("patient_name", "Walk-in Patient"),
         "age": details.get("age", "N/A"),
         "phone": details.get("phone", "Not Provided"),
-        "chief_complaint": details.get("chief_complaint", user_msg),
+        "blood_group": details.get("blood_group", "N/A"),
+        "gender": details.get("gender", "N/A"),
+        "chief_complaint": history[0]["text"] if history else user_msg,
         "pain_site": selected_site,
         "severity": "10/10 EMERGENCY" if is_emergency else "5/10",
         "is_red_flag": is_emergency,
-        "history": history
+        "history": history,
+        "past_history": details.get("past_history", [])
     }
     
+    # Save/Update in Active OPD Queue
+    PATIENT_RECORDS = [r for r in PATIENT_RECORDS if r["token"] != assigned_token]
     PATIENT_RECORDS.append(record)
+    
+    # Save to Supabase Medical History table if connected
+    if supabase and (ai_reply.startswith("Clinical intake complete") or is_emergency):
+        try:
+            supabase.table("medical_history").insert({
+                "nfc_uid": details.get("nfc_uid", ""),
+                "patient_name": record["patient_name"],
+                "chief_complaint": record["chief_complaint"],
+                "consultation_notes": json.dumps(history),
+                "pain_site": selected_site,
+                "is_red_flag": is_emergency
+            }).execute()
+        except Exception as err:
+            print(f"Medical history DB save warning: {err}")
+
     await manager.broadcast(record)
 
     return {
