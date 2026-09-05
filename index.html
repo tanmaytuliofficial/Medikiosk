@@ -86,9 +86,10 @@
                     <h3 class="font-bold text-base text-slate-800">Enter NFC Tag / Health Card UID</h3>
                     <button onclick="closeNfcManualModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
-                <input type="text" id="manual-nfc-input" placeholder="e.g. CARD9988" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold uppercase focus:outline-none focus:border-orange-500">
-                <button onclick="submitManualNfc()" class="w-full orange-card text-white py-3 rounded-xl font-bold shadow-md hover:scale-[1.02] transition text-xs">
-                    Scan & Check Database ➔
+                <input type="text" id="manual-nfc-input" value="CARD5678" placeholder="e.g. CARD5678" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold uppercase focus:outline-none focus:border-orange-500">
+                <button type="button" onclick="submitManualNfc()" class="w-full orange-card text-white py-3 rounded-xl font-bold shadow-md hover:scale-[1.02] transition text-xs flex items-center justify-center gap-2">
+                    <span>Scan & Check Database</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
             </div>
         </div>
@@ -259,7 +260,11 @@
 
     <script>
         lucide.createIcons();
-        const BASE_API_URL = "https://medikiosk-backend-8rs2.onrender.com";
+        
+        // Auto-detect backend host or fallback to deployed Render URL
+        const BASE_API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+            ? "http://localhost:8000"
+            : "https://medikiosk-backend-8r.onrender.com";
 
         let currentNfcUid = "";
         let currentLang = 'en';
@@ -298,27 +303,30 @@
                 const response = await fetch(`${BASE_API_URL}/api/nfc/tap`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nfc_uid: scannedUid })
+                    body: JSON.stringify({ nfc_uid: scannedUid, card_id: scannedUid })
                 });
 
                 const result = await response.json();
-                if (result.success) {
-                    currentNfcUid = result.data.nfc_uid || scannedUid;
+                
+                if (result.status === "success" || result.success) {
+                    const dataObj = result.patient || result.data || {};
+                    currentNfcUid = dataObj.nfc_uid || scannedUid;
+                    
                     document.getElementById('nfc-page').classList.add('hidden');
 
-                    if (result.user_type === "EXISTING_USER") {
+                    if (result.user_type === "EXISTING_USER" || result.found) {
                         patientDetails = {
                             nfc_uid: currentNfcUid,
-                            patient_name: result.data.full_name,
-                            age: result.data.age,
-                            phone: result.data.phone_number,
-                            blood_group: result.data.blood_group,
-                            gender: result.data.gender,
-                            abha_id: result.data.abha_id,
+                            patient_name: dataObj.patient_name || dataObj.full_name || "Patient",
+                            age: dataObj.age || 30,
+                            phone: dataObj.phone || dataObj.phone_number || "",
+                            blood_group: dataObj.blood_group || "O+",
+                            gender: dataObj.gender || "Male",
+                            abha_id: dataObj.abha_id || "",
                             past_history: result.past_history || []
                         };
                         
-                        document.getElementById('welcome-patient-name').innerText = `Welcome Back, ${result.data.full_name}! (${result.data.age} yrs • Blood: ${result.data.blood_group || 'N/A'})`;
+                        document.getElementById('welcome-patient-name').innerText = `Welcome Back, ${patientDetails.patient_name}! (${patientDetails.age} yrs • Blood: ${patientDetails.blood_group})`;
                         
                         if (result.past_history && result.past_history.length > 0) {
                             const lastVisit = result.past_history[result.past_history.length - 1];
@@ -328,7 +336,7 @@
                         }
 
                         document.getElementById('lang-page').classList.remove('hidden');
-                        speakText(`Welcome back ${result.data.full_name}. Please choose your language.`, "normal");
+                        speakText(`Welcome back ${patientDetails.patient_name}. Please choose your language.`, "normal");
                     } else {
                         document.getElementById('reg-display-uid').innerText = currentNfcUid;
                         document.getElementById('reg-page').classList.remove('hidden');
@@ -361,7 +369,7 @@
                 });
 
                 const data = await res.json();
-                if (data.success) {
+                if (data.status === "success" || data.success) {
                     patientDetails = {
                         nfc_uid: currentNfcUid,
                         patient_name: payload.full_name,
@@ -587,7 +595,7 @@
                 });
 
                 const data = await res.json();
-                patientDetails = data.patient_details;
+                if (data.patient_details) patientDetails = data.patient_details;
                 stepIndex++;
 
                 if (data.assigned_token) {
