@@ -1,5 +1,7 @@
 fastapi
 uvicorn
-supabase
-requests
 pydantic
+python-multipart
+pypdf2
+supabase
+groq
