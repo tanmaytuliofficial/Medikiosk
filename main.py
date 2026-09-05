@@ -51,6 +51,8 @@ class NFCRegisterRequest(BaseModel):
     allergies: Optional[List[str]] = []
     chronic_conditions: Optional[List[str]] = []
 
+# Global In-Memory Patient & History Cache (Guarantees instantly recognizing registered tags)
+REGISTERED_NFC_USERS: Dict[str, Dict[str, Any]] = {}
 PATIENT_RECORDS: List[Dict[str, Any]] = []
 ARCHIVED_RECORDS: List[Dict[str, Any]] = []
 active_connections: List[WebSocket] = []
@@ -113,6 +115,17 @@ async def websocket_endpoint(websocket: WebSocket):
 async def nfc_tap_handler(payload: NFCTapRequest):
     scanned_uid = payload.nfc_uid.strip().upper() if payload.nfc_uid else "DEMO99887766"
     
+    # 1. Check local in-memory cache first (Lightning fast response)
+    if scanned_uid in REGISTERED_NFC_USERS:
+        user = REGISTERED_NFC_USERS[scanned_uid]
+        return {
+            "success": True,
+            "user_type": "EXISTING_USER",
+            "data": user,
+            "past_history": user.get("past_history", [])
+        }
+
+    # 2. Check Supabase DB
     try:
         if supabase:
             res = supabase.table("users").select("*").eq("nfc_uid", scanned_uid).execute()
@@ -121,6 +134,9 @@ async def nfc_tap_handler(payload: NFCTapRequest):
                 
                 history_res = supabase.table("medical_history").select("*").eq("nfc_uid", scanned_uid).execute()
                 past_records = history_res.data if history_res.data else []
+
+                user["past_history"] = past_records
+                REGISTERED_NFC_USERS[scanned_uid] = user  # Save to local cache
 
                 return {
                     "success": True,
@@ -151,8 +167,12 @@ async def register_nfc_patient(payload: NFCRegisterRequest):
         "blood_group": payload.blood_group,
         "allergies": payload.allergies or [],
         "chronic_conditions": payload.chronic_conditions or [],
-        "is_registered": True
+        "is_registered": True,
+        "past_history": []
     }
+
+    # Immediately store in local memory so subsequent taps NEVER trigger registration form
+    REGISTERED_NFC_USERS[clean_uid] = user_data
 
     if supabase:
         try:
@@ -242,7 +262,7 @@ async def clinical_ai_chat(payload: ChatRequest):
             except Exception as e:
                 print("Groq API Call Error (Switching to local fallback):", e)
 
-        # Fail-Safe Local Dynamic Diagnostic Flow (Ensures chatbot ALWAYS responds)
+        # Fail-Safe Local Dynamic Diagnostic Flow
         if not ai_reply:
             user_turns = len([m for m in history if m.get("sender") == "user"])
             if user_turns <= 1:
@@ -285,6 +305,15 @@ async def clinical_ai_chat(payload: ChatRequest):
     
     PATIENT_RECORDS = [r for r in PATIENT_RECORDS if r["token"] != assigned_token]
     PATIENT_RECORDS.append(record)
+
+    # Save to past history of patient
+    nfc_id = details.get("nfc_uid", "").strip().upper()
+    if nfc_id in REGISTERED_NFC_USERS:
+        REGISTERED_NFC_USERS[nfc_id]["past_history"].append({
+            "chief_complaint": record["chief_complaint"],
+            "pain_site": selected_site,
+            "date": "Today"
+        })
     
     await manager.broadcast(record)
 
