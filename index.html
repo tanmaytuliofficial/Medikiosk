@@ -323,7 +323,7 @@
 
     <script>
         lucide.createIcons();
-        const BASE_API_URL = "https://medikiosk-backend-8rs2.onrender.com"; // Local FastAPI Backend
+        const BASE_API_URL = "https://medikiosk-backend-8rs2.onrender.com";
 
         let currentNfcUid = "";
         let currentLang = 'en';
@@ -333,7 +333,6 @@
         let stepIndex = 1;
         let audioCtx = null;
         let voiceGuideEnabled = true;
-        let initialPromptSpoken = false;
         let countdownTimer = null;
 
         function unlockAudio() {
@@ -369,7 +368,6 @@
                     document.getElementById('nfc-page').classList.add('hidden');
 
                     if (result.user_type === "EXISTING_USER") {
-                        // User Already Registered
                         patientDetails = {
                             patient_name: result.data.full_name,
                             age: result.data.age,
@@ -380,13 +378,12 @@
                         document.getElementById('lang-page').classList.remove('hidden');
                         speakText(`Welcome back ${result.data.full_name}. Please choose your language.`, "normal");
                     } else {
-                        // New User Registration Form
                         document.getElementById('reg-display-uid').innerText = currentNfcUid;
                         document.getElementById('reg-page').classList.remove('hidden');
                     }
                 }
             } catch (err) {
-                alert("Cannot connect to backend server! Ensure main.py is running on port 8000.");
+                alert("Cannot connect to backend server! Ensure backend is reachable.");
                 console.error("NFC Error:", err);
             }
         }

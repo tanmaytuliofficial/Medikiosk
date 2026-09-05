@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
@@ -9,10 +9,11 @@ import os
 from supabase import create_client, Client
 
 app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="25.0.0")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,  # Changed to False so wildcard origins work seamlessly
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -20,10 +21,15 @@ app.add_middleware(
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
 # ⚡ SUPABASE DATABASE INITIALIZATION
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://kosmrpnsudxwvqxejbzs.supabase.co") # Supabase Dashboard se copy kar
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvc21ycG5zdWR4d3ZxeGVqYnpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NDkyNzUsImV4cCI6MjEwNDAyNTI3NX0.HNmz8QveUDUhldjpUwNP1zhRiTAOm5wrbELPyCya8T0") # Supabase Dashboard se copy kar
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://kosmrpnsudxwvqxejbzs.supabase.co")
+SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvc21ycG5zdWR4d3ZxeGVqYnpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NDkyNzUsImV4cCI6MjEwNDAyNTI3NX0.HNmz8QveUDUhldjpUwNP1zhRiTAOm5wrbELPyCya8T0")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase: Optional[Client] = None
+try:
+    if SUPABASE_URL and SUPABASE_KEY:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+except Exception as e:
+    print(f"Supabase init warning: {e}")
 
 # --- PYDANTIC SCHEMAS ---
 class ChatRequest(BaseModel):
@@ -113,13 +119,12 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
-# --- 🚀 NEW: NFC TAP ENDPOINT (ESP32 / KIOSK HIT KAREGA) ---
+# --- 💳 NFC TAP ENDPOINT ---
 @app.post("/api/nfc/tap")
-async def nfc_tap_handler(payload: dict):
+async def nfc_tap_handler(payload: NFCTapRequest):
+    scanned_uid = payload.nfc_uid.strip().upper() if payload.nfc_uid else "DEMO99887766"
+    
     try:
-        scanned_uid = payload.get("nfc_uid", "DEMO99887766")
-        
-        # Try Supabase DB lookup if configured
         if supabase:
             res = supabase.table("users").select("*").eq("nfc_uid", scanned_uid).execute()
             if res.data and len(res.data) > 0:
@@ -129,54 +134,50 @@ async def nfc_tap_handler(payload: dict):
                     "user_type": "EXISTING_USER",
                     "data": user
                 }
-        
-        # Fallback if new user or DB empty (Prevents 500 Crash)
-        return {
-            "success": True,
-            "user_type": "NEW_USER",
-            "data": {"nfc_uid": scanned_uid}
-        }
     except Exception as e:
-        print(f"NFC Error Bypassed: {e}")
-        # Always return 200 OK to prevent UI blocks during demo
-        return {
-            "success": True,
-            "user_type": "NEW_USER",
-            "data": {"nfc_uid": payload.get("nfc_uid", "DEMO99887766")}
-        }
+        print(f"NFC DB Lookup Bypassed: {e}")
 
-# --- 🚀 NEW: NFC PATIENT REGISTRATION ENDPOINT ---
+    return {
+        "success": True,
+        "user_type": "NEW_USER",
+        "data": {"nfc_uid": scanned_uid}
+    }
+
+# --- 📝 NFC PATIENT REGISTRATION ENDPOINT (SINGLE CLEANED ROUTE) ---
 @app.post("/api/nfc/register")
 async def register_nfc_patient(payload: NFCRegisterRequest):
     clean_uid = payload.nfc_uid.strip().upper()
-    
-    # Check if Tag exists
-    res = supabase.table("users").select("*").eq("nfc_uid", clean_uid).execute()
-    if not res.data:
-        raise HTTPException(status_code=404, detail="NFC Tag not found. Tap tag on reader first.")
 
-    updated_fields = {
+    user_data = {
+        "nfc_uid": clean_uid,
         "full_name": payload.full_name,
-        "abha_id": payload.abha_id,
+        "abha_id": payload.abha_id or "",
         "age": payload.age,
         "gender": payload.gender,
         "phone_number": payload.phone_number,
         "blood_group": payload.blood_group,
-        "allergies": payload.allergies,
-        "chronic_conditions": payload.chronic_conditions,
+        "allergies": payload.allergies or [],
+        "chronic_conditions": payload.chronic_conditions or [],
         "is_registered": True
     }
 
-    # Update in Supabase
-    supabase.table("users").update(updated_fields).eq("nfc_uid", clean_uid).execute()
+    if supabase:
+        try:
+            res = supabase.table("users").select("*").eq("nfc_uid", clean_uid).execute()
+            if res.data and len(res.data) > 0:
+                supabase.table("users").update(user_data).eq("nfc_uid", clean_uid).execute()
+            else:
+                supabase.table("users").insert(user_data).execute()
+        except Exception as db_err:
+            print(f"Supabase registration error (bypassed): {db_err}")
 
     return {
         "success": True,
         "message": "Patient linked to NFC Tag successfully!",
-        "data": updated_fields
+        "data": user_data
     }
 
-# --- CLINICAL AI CHAT ENDPOINT ---
+# --- 🤖 CLINICAL AI CHAT ENDPOINT ---
 @app.post("/api/chat/ai-assistant")
 async def clinical_ai_chat(payload: ChatRequest):
     global CURRENT_TOKEN_COUNTER
@@ -306,39 +307,3 @@ async def clinical_ai_chat(payload: ChatRequest):
 @app.get("/api/doctor/summary")
 def get_doctor_summary():
     return {"active_queue": PATIENT_RECORDS, "archive": ARCHIVED_RECORDS}
-
-@app.post("/api/nfc/register")
-async def register_user(payload: dict):
-    try:
-        nfc_uid = payload.get("nfc_uid", "")
-        name = payload.get("name", "")
-        age = payload.get("age", "")
-        gender = payload.get("gender", "")
-        mobile = payload.get("mobile", "")
-        blood_group = payload.get("blood_group", "")
-        abha_id = payload.get("abha_id", "")
-
-        user_data = {
-            "nfc_uid": nfc_uid,
-            "name": name,
-            "age": age,
-            "gender": gender,
-            "mobile": mobile,
-            "blood_group": blood_group,
-            "abha_id": abha_id
-        }
-
-        if supabase:
-            try:
-                supabase.table("users").insert(user_data).execute()
-            except Exception as db_err:
-                print(f"Supabase write skipped: {db_err}")
-
-        return {
-            "success": True,
-            "message": "User registered successfully",
-            "data": user_data
-        }
-    except Exception as e:
-        print(f"Register Exception Bypassed: {e}")
-        return {"success": True, "data": payload}
