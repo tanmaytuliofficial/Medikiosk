@@ -53,13 +53,9 @@ groq_client = (
 # ============================================================
 # CORS MIDDLEWARE
 # ============================================================
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"
-                   "https://medikiosk-dyj.pages.dev",
-                   "http://localhost:3000",
-                   "http://localhost:8000"],
+    allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
