@@ -1,14 +1,52 @@
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    WebSocket,
+    WebSocketDisconnect,
+    UploadFile,
+    File,
+    Query,
+)
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Optional, Any, Dict
-import requests
-import json
-import re
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+import sqlite3
 import os
-from supabase import create_client, Client
+import asyncio
+import csv
+import io
+import shutil
+import uuid
+import json
+from groq import Groq
 
-app = FastAPI(title="MediKiosk Clinical Intelligence Platform", version="25.0.0")
+# ============================================================
+# APP INITIALIZATION
+# ============================================================
+
+app = FastAPI(
+    title="MediKiosk Clinical Intelligence Platform",
+    version="35.0.0"
+)
+
+# ============================================================
+# GROQ AI INTEGRATION
+# ============================================================
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+
+groq_client = (
+    Groq(api_key=GROQ_API_KEY)
+    if GROQ_API_KEY
+    else None
+)
+
+# ============================================================
+# CORS MIDDLEWARE
+# ============================================================
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,315 +56,545 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+# ============================================================
+# DATABASE CONFIGURATION
+# ============================================================
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://kosmrpnsudxwvqxejbzs.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvc21ycG5zdWR4d3ZxeGVqYnpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NDkyNzUsImV4cCI6MjEwNDAyNTI3NX0.HNmz8QveUDUhldjpUwNP1zhRiTAOm5wrbELPyCya8T0")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///./medikiosk.db"
+)
 
-supabase: Optional[Client] = None
-try:
-    if SUPABASE_URL and SUPABASE_KEY:
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-except Exception as e:
-    print(f"Supabase init warning: {e}")
+if DATABASE_URL.startswith("sqlite:///"):
+    DB_PATH = DATABASE_URL.replace("sqlite:///", "", 1)
+else:
+    DB_PATH = "./medikiosk.db"
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH, timeout=30)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# ============================================================
+# FILE UPLOADS
+# ============================================================
+
+UPLOAD_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "medical_reports"
+)
+
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+app.mount(
+    "/uploads",
+    StaticFiles(directory=UPLOAD_DIR),
+    name="uploads"
+)
+
+# ============================================================
+# DATABASE HELPERS
+# ============================================================
+
+def get_table_columns(cursor, table_name: str):
+    cursor.execute(f"PRAGMA table_info({table_name})")
+    return [row[1] for row in cursor.fetchall()]
+
+def add_column_if_missing(cursor, table_name: str, column_name: str, column_definition: str):
+    columns = get_table_columns(cursor, table_name)
+    if column_name not in columns:
+        cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}")
+
+def init_database():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS patients (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id TEXT UNIQUE,
+            patient_name TEXT,
+            age INTEGER,
+            phone TEXT,
+            gender TEXT,
+            chief_complaint TEXT,
+            symptoms TEXT,
+            medical_history TEXT,
+            pain_site TEXT,
+            department TEXT,
+            assigned_doctor_id INTEGER,
+            assigned_doctor_name TEXT,
+            status TEXT DEFAULT 'Waiting',
+            token INTEGER UNIQUE,
+            emergency INTEGER DEFAULT 0,
+            doctor_notes TEXT,
+            medical_report_image TEXT,
+            medical_report_filename TEXT,
+            ocr_text TEXT,
+            ai_summary TEXT,
+            clinical_information TEXT,
+            conversation TEXT,
+            created_at TEXT,
+            updated_at TEXT,
+            completed_at TEXT,
+            completed_by TEXT
+        )
+    """)
+
+    patient_columns = [
+        ("patient_id", "TEXT"),
+        ("patient_name", "TEXT"),
+        ("age", "INTEGER"),
+        ("phone", "TEXT"),
+        ("gender", "TEXT"),
+        ("chief_complaint", "TEXT"),
+        ("symptoms", "TEXT"),
+        ("medical_history", "TEXT"),
+        ("pain_site", "TEXT"),
+        ("department", "TEXT"),
+        ("assigned_doctor_id", "INTEGER"),
+        ("assigned_doctor_name", "TEXT"),
+        ("status", "TEXT DEFAULT 'Waiting'"),
+        ("token", "INTEGER"),
+        ("emergency", "INTEGER DEFAULT 0"),
+        ("doctor_notes", "TEXT"),
+        ("medical_report_image", "TEXT"),
+        ("medical_report_filename", "TEXT"),
+        ("ocr_text", "TEXT"),
+        ("ai_summary", "TEXT"),
+        ("clinical_information", "TEXT"),
+        ("conversation", "TEXT"),
+        ("created_at", "TEXT"),
+        ("updated_at", "TEXT"),
+        ("completed_at", "TEXT"),
+        ("completed_by", "TEXT"),
+    ]
+
+    for column_name, definition in patient_columns:
+        add_column_if_missing(cursor, "patients", column_name, definition)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS doctors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            doctor_id TEXT,
+            name TEXT NOT NULL,
+            department TEXT NOT NULL,
+            phone TEXT,
+            email TEXT,
+            password TEXT DEFAULT 'doctor123',
+            password_hash TEXT DEFAULT 'doctor123',
+            active INTEGER DEFAULT 1
+        )
+    """)
+
+    doctor_columns = [
+        ("doctor_id", "TEXT DEFAULT ''"),
+        ("name", "TEXT"),
+        ("department", "TEXT"),
+        ("phone", "TEXT"),
+        ("email", "TEXT"),
+        ("password", "TEXT DEFAULT 'doctor123'"),
+        ("password_hash", "TEXT DEFAULT 'doctor123'"),
+        ("active", "INTEGER DEFAULT 1"),
+    ]
+
+    for column_name, definition in doctor_columns:
+        add_column_if_missing(cursor, "doctors", column_name, definition)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS admins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password TEXT
+        )
+    """)
+    add_column_if_missing(cursor, "admins", "password", "TEXT")
+
+    cursor.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)")
+
+    cursor.execute("SELECT id FROM admins WHERE username = 'admin' LIMIT 1")
+    if cursor.fetchone() is None:
+        cursor.execute("INSERT INTO admins (username, password) VALUES ('admin', 'admin123')")
+
+    default_doctors = [
+        ("DOC-001", "Dr. Rahul Sharma", "General Medicine"),
+        ("DOC-002", "Dr. Priya Verma", "Orthopedics"),
+        ("DOC-003", "Dr. Amit Singh", "Cardiology"),
+        ("DOC-004", "Dr. Neha Gupta", "Neurology"),
+        ("DOC-005", "Dr. Anjali Mehta", "Dermatology"),
+        ("DOC-006", "Dr. Arjun Kapoor", "ENT"),
+        ("DOC-007", "Dr. Riya Malhotra", "Pediatrics"),
+    ]
+
+    for doc_id, name, dept in default_doctors:
+        cursor.execute("SELECT id FROM doctors WHERE doctor_id = ? OR name = ? LIMIT 1", (doc_id, name))
+        existing = cursor.fetchone()
+        if existing is None:
+            cursor.execute("""
+                INSERT INTO doctors (doctor_id, name, department, phone, email, password, password_hash, active)
+                VALUES (?, ?, ?, '', '', 'doctor123', 'doctor123', 1)
+            """, (doc_id, name, dept))
+
+    conn.commit()
+    conn.close()
+
+# ============================================================
+# WEBSOCKET MANAGER
+# ============================================================
+
+connected_clients: List[WebSocket] = []
+
+async def broadcast(message: Dict[str, Any]):
+    dead_connections = []
+    for ws in list(connected_clients):
+        try:
+            await ws.send_json(message)
+        except Exception:
+            dead_connections.append(ws)
+    for ws in dead_connections:
+        if ws in connected_clients:
+            connected_clients.remove(ws)
+
+# ============================================================
+# MODELS
+# ============================================================
 
 class ChatRequest(BaseModel):
     user_message: str
-    chat_history: List[dict] = []
-    language: Optional[str] = "en"
-    patient_details: Optional[dict] = {}
-    pain_site: Optional[str] = "General"
+    chat_history: List[Dict[str, Any]] = Field(default_factory=list)
+    language: str = "en"
+    patient_details: Dict[str, Any] = Field(default_factory=dict)
+    pain_site: Optional[str] = None
+    is_nfc_mode: bool = False
+    clinical_information: Dict[str, Any] = Field(default_factory=dict)
 
-class NFCTapRequest(BaseModel):
-    nfc_uid: str
+class DoctorLoginRequest(BaseModel):
+    username: str
+    password: str
 
-class NFCRegisterRequest(BaseModel):
-    nfc_uid: str
-    full_name: str
-    abha_id: Optional[str] = ""
-    age: int
-    gender: str
-    phone_number: str
-    blood_group: str
-    allergies: Optional[List[str]] = []
-    chronic_conditions: Optional[List[str]] = []
+class AdminLoginRequest(BaseModel):
+    username: str
+    password: str
 
-# Global In-Memory Patient & History Cache (Guarantees instantly recognizing registered tags)
-REGISTERED_NFC_USERS: Dict[str, Dict[str, Any]] = {}
-PATIENT_RECORDS: List[Dict[str, Any]] = []
-ARCHIVED_RECORDS: List[Dict[str, Any]] = []
-active_connections: List[WebSocket] = []
-CURRENT_TOKEN_COUNTER: int = 101
+class PatientStatusRequest(BaseModel):
+    status: str
+    doctor_id: Optional[int] = None
 
-CLINICAL_SYSTEM_PROMPT = """
-You are MediKiosk AI, an expert clinical triage assistant conducting a medical intake.
-Patient Info: Name: {patient_name}, Age: {age}, Gender: {gender}, Blood Group: {blood_group}.
-Past Medical Records: {past_history}
+class DoctorNotesRequest(BaseModel):
+    notes: str = ""
 
-Strict Language: {lang}.
+class AdminPatientUpdateRequest(BaseModel):
+    patient_name: Optional[str] = None
+    age: Optional[int] = None
+    phone: Optional[str] = None
+    gender: Optional[str] = None
+    pain_site: Optional[str] = None
+    department: Optional[str] = None
+    status: Optional[str] = None
+    assigned_doctor_id: Optional[int] = None
 
-INSTRUCTIONS:
-1. DO NOT ask for Name, Age, Gender, or Phone (they are verified).
-2. Ask 1 concise clinical follow-up question regarding symptoms (duration, severity, associated fever/nausea, triggers, medications).
-3. Provide 4 relevant quick-response options in poll_options.
-4. If you have collected enough symptom details (5+ questions asked) OR user indicates recovery, set reply to "Clinical intake complete! Token generated."
-5. If red-flag symptoms occur (severe chest pain, stroke, unconsciousness), include "[RED_FLAG_ALERT]" in reply.
+class SelectedPatientsRequest(BaseModel):
+    tokens: List[int] = Field(default_factory=list)
 
-JSON FORMAT ONLY:
-{{
-  "reply": "Clinical question here",
-  "poll_options": [
-    {{"label": "Option 1", "value": "Option 1"}},
-    {{"label": "Option 2", "value": "Option 2"}},
-    {{"label": "Option 3", "value": "Option 3"}},
-    {{"label": "Option 4", "value": "Option 4"}}
-  ]
-}}
-"""
+class DoctorCreateRequest(BaseModel):
+    doctor_id: Optional[str] = None
+    name: str
+    department: str
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = "doctor123"
+    active: Optional[int] = 1
 
-class ConnectionManager:
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        active_connections.append(websocket)
+class DoctorUpdateRequest(BaseModel):
+    doctor_id: Optional[str] = None
+    name: Optional[str] = None
+    department: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    active: Optional[int] = None
 
-    def disconnect(self, websocket: WebSocket):
-        if websocket in active_connections:
-            active_connections.remove(websocket)
+# ============================================================
+# HELPER & UTILITY FUNCTIONS
+# ============================================================
 
-    async def broadcast(self, message: dict):
-        for connection in active_connections:
-            try:
-                await connection.send_text(json.dumps(message))
-            except Exception:
-                pass
+def now():
+    return datetime.now().isoformat(timespec="seconds")
 
-manager = ConnectionManager()
+def generate_patient_id():
+    return "MK-" + datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
 
-@app.websocket("/ws/doctor-updates")
-async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
+def safe_row_value(row, key, default=None):
+    if row is None:
+        return default
     try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        if key in row.keys():
+            val = row[key]
+            return default if val is None else val
+    except Exception:
+        pass
+    return default
 
-@app.post("/api/nfc/tap")
-async def nfc_tap_handler(payload: NFCTapRequest):
-    scanned_uid = payload.nfc_uid.strip().upper() if payload.nfc_uid else "DEMO99887766"
-    
-    # 1. Check local in-memory cache first (Lightning fast response)
-    if scanned_uid in REGISTERED_NFC_USERS:
-        user = REGISTERED_NFC_USERS[scanned_uid]
-        return {
-            "success": True,
-            "user_type": "EXISTING_USER",
-            "data": user,
-            "past_history": user.get("past_history", [])
-        }
+def patient_row_to_dict(row):
+    if row is None:
+        return None
 
-    # 2. Check Supabase DB
+    emergency_val = safe_row_value(row, "emergency", 0)
     try:
-        if supabase:
-            res = supabase.table("users").select("*").eq("nfc_uid", scanned_uid).execute()
-            if res.data and len(res.data) > 0:
-                user = res.data[0]
-                
-                history_res = supabase.table("medical_history").select("*").eq("nfc_uid", scanned_uid).execute()
-                past_records = history_res.data if history_res.data else []
+        emergency_bool = bool(int(emergency_val or 0))
+    except Exception:
+        emergency_bool = bool(emergency_val)
 
-                user["past_history"] = past_records
-                REGISTERED_NFC_USERS[scanned_uid] = user  # Save to local cache
-
-                return {
-                    "success": True,
-                    "user_type": "EXISTING_USER",
-                    "data": user,
-                    "past_history": past_records
-                }
-    except Exception as e:
-        print(f"NFC DB Lookup Warning: {e}")
-
-    return {
-        "success": True,
-        "user_type": "NEW_USER",
-        "data": {"nfc_uid": scanned_uid}
-    }
-
-@app.post("/api/nfc/register")
-async def register_nfc_patient(payload: NFCRegisterRequest):
-    clean_uid = payload.nfc_uid.strip().upper()
-
-    user_data = {
-        "nfc_uid": clean_uid,
-        "full_name": payload.full_name,
-        "abha_id": payload.abha_id or "",
-        "age": payload.age,
-        "gender": payload.gender,
-        "phone_number": payload.phone_number,
-        "blood_group": payload.blood_group,
-        "allergies": payload.allergies or [],
-        "chronic_conditions": payload.chronic_conditions or [],
-        "is_registered": True,
-        "past_history": []
-    }
-
-    # Immediately store in local memory so subsequent taps NEVER trigger registration form
-    REGISTERED_NFC_USERS[clean_uid] = user_data
-
-    if supabase:
+    clinical_raw = safe_row_value(row, "clinical_information", "")
+    clinical_info = {}
+    if isinstance(clinical_raw, dict):
+        clinical_info = clinical_raw
+    elif isinstance(clinical_raw, str) and clinical_raw.strip():
         try:
-            res = supabase.table("users").select("*").eq("nfc_uid", clean_uid).execute()
-            if res.data and len(res.data) > 0:
-                supabase.table("users").update(user_data).eq("nfc_uid", clean_uid).execute()
-            else:
-                supabase.table("users").insert(user_data).execute()
-        except Exception as db_err:
-            print(f"Supabase registration error: {db_err}")
+            parsed = json.loads(clinical_raw)
+            if isinstance(parsed, dict):
+                clinical_info = parsed
+        except Exception:
+            clinical_info = {}
+
+    clinical_info.setdefault("duration", "")
+    clinical_info.setdefault("severity", "")
+    clinical_info.setdefault("pain_site", safe_row_value(row, "pain_site", "General") or "General")
+
+    conversation_raw = safe_row_value(row, "conversation", "")
+    conversation = []
+    if isinstance(conversation_raw, list):
+        conversation = conversation_raw
+    elif isinstance(conversation_raw, str) and conversation_raw.strip():
+        try:
+            parsed_c = json.loads(conversation_raw)
+            if isinstance(parsed_c, list):
+                conversation = parsed_c
+        except Exception:
+            conversation = []
 
     return {
-        "success": True,
-        "message": "Patient linked to NFC Tag successfully!",
-        "data": user_data
+        "id": safe_row_value(row, "id"),
+        "patient_id": safe_row_value(row, "patient_id"),
+        "patient_name": safe_row_value(row, "patient_name", "Walk-in Patient") or "Walk-in Patient",
+        "age": safe_row_value(row, "age"),
+        "phone": safe_row_value(row, "phone"),
+        "contact": safe_row_value(row, "phone"),
+        "gender": safe_row_value(row, "gender"),
+        "chief_complaint": safe_row_value(row, "chief_complaint"),
+        "symptoms": safe_row_value(row, "symptoms") or clinical_info.get("symptoms", "") or safe_row_value(row, "chief_complaint", ""),
+        "medical_history": safe_row_value(row, "medical_history"),
+        "pain_site": safe_row_value(row, "pain_site", "General") or "General",
+        "department": safe_row_value(row, "department", "General Medicine") or "General Medicine",
+        "assigned_doctor_id": safe_row_value(row, "assigned_doctor_id"),
+        "assigned_doctor_name": safe_row_value(row, "assigned_doctor_name", "Duty Doctor") or "Duty Doctor",
+        "status": safe_row_value(row, "status", "Waiting") or "Waiting",
+        "token": safe_row_value(row, "token"),
+        "emergency": emergency_bool,
+        "is_emergency": emergency_bool,
+        "is_red_flag": emergency_bool,
+        "case_type": "emergency" if emergency_bool else "normal",
+        "doctor_notes": safe_row_value(row, "doctor_notes", "") or "",
+        "medical_report_image": safe_row_value(row, "medical_report_image"),
+        "medical_report_filename": safe_row_value(row, "medical_report_filename"),
+        "ocr_text": safe_row_value(row, "ocr_text"),
+        "ai_summary": safe_row_value(row, "ai_summary"),
+        "clinical_information": clinical_info,
+        "created_at": safe_row_value(row, "created_at"),
+        "updated_at": safe_row_value(row, "updated_at"),
+        "completed_at": safe_row_value(row, "completed_at"),
+        "completed_by": safe_row_value(row, "completed_by"),
+        "conversation": conversation,
+        "transcript": conversation,
     }
 
-@app.post("/api/chat/ai-assistant")
-async def clinical_ai_chat(payload: ChatRequest):
-    global CURRENT_TOKEN_COUNTER, PATIENT_RECORDS
-    
-    user_msg = payload.user_message.strip()
-    history = payload.chat_history
-    lang = payload.language or "en"
-    details = payload.patient_details or {}
-    selected_site = payload.pain_site or "General"
+EMERGENCY_PATTERNS = [
+    "severe chest pain", "crushing chest pain", "difficulty breathing", "cannot breathe",
+    "can't breathe", "shortness of breath", "unconscious", "fainted", "loss of consciousness",
+    "severe bleeding", "heavy bleeding", "stroke", "seizure", "convulsion", "paralysis",
+    "face drooping", "slurred speech"
+]
 
-    msg_lower = user_msg.lower()
-    red_flag_keywords = ["chest pain", "chhati me dard", "saans lene me dikkat", "stroke", "severe bleeding", "heavy bleeding", "bleeding", "accident", "trauma", "unconscious"]
-    is_emergency = any(kw in msg_lower for kw in red_flag_keywords)
+def detect_emergency(text: str):
+    text = (text or "").lower().strip()
+    return any(p in text for p in EMERGENCY_PATTERNS)
 
-    if any(w in msg_lower for w in ["head", "sir", "sar", "headache", "matha", "migraine"]):
-        selected_site = "Head"
-    elif any(w in msg_lower for w in ["stomach", "pet", "belly", "abdomen", "gastric", "acidity", "vomit"]):
-        selected_site = "Abdomen"
-    elif any(w in msg_lower for w in ["chest", "chhati", "heart"]):
-        selected_site = "Chest"
-    elif any(w in msg_lower for w in ["back", "peeth", "spine"]):
-        selected_site = "Back"
-    elif any(w in msg_lower for w in ["leg", "pair", "knee", "arm", "hand", "limb"]):
-        selected_site = "Limbs"
-
-    ai_reply = ""
-    poll_options = []
-
-    if is_emergency:
-        ai_reply = "🚨 EMERGENCY DETECTED! Intake terminated. Priority token assigned!" if lang == 'en' else "🚨 आपातकालीन स्थिति! आगे के प्रश्न रोके गए। प्राथमिकता टोकन जारी कर दिया गया है!"
-    else:
-        # Try Groq AI Call Safely
-        if GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_"):
-            try:
-                formatted_prompt = CLINICAL_SYSTEM_PROMPT.format(
-                    patient_name=details.get("patient_name", "Unknown"),
-                    age=details.get("age", "Unknown"),
-                    phone=details.get("phone", "Unknown"),
-                    gender=details.get("gender", "Unknown"),
-                    blood_group=details.get("blood_group", "Unknown"),
-                    past_history=json.dumps(details.get("past_history", [])),
-                    lang="Hindi" if lang == "hi" else "English"
-                )
-
-                messages = [{"role": "system", "content": formatted_prompt}]
-                
-                for msg in history:
-                    role = "assistant" if msg.get("sender") in ["assistant", "ai"] else "user"
-                    messages.append({"role": role, "content": msg.get("text", "")})
-                
-                messages.append({"role": "user", "content": user_msg})
-
-                url = "https://api.groq.com/openai/v1/chat/completions"
-                headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
-                body = {
-                    "model": "llama-3.1-8b-instant",
-                    "messages": messages,
-                    "temperature": 0.2,
-                    "response_format": {"type": "json_object"}
-                }
-                res = requests.post(url, headers=headers, json=body, timeout=5)
-                if res.status_code == 200:
-                    raw_content = res.json()["choices"][0]["message"]["content"]
-                    json_res = json.loads(raw_content)
-                    ai_reply = json_res.get("reply", "")
-                    poll_options = json_res.get("poll_options", [])
-                    if "[RED_FLAG_ALERT]" in ai_reply:
-                        is_emergency = True
-                        ai_reply = ai_reply.replace("[RED_FLAG_ALERT]", "").strip()
-            except Exception as e:
-                print("Groq API Call Error (Switching to local fallback):", e)
-
-        # Fail-Safe Local Dynamic Diagnostic Flow
-        if not ai_reply:
-            user_turns = len([m for m in history if m.get("sender") == "user"])
-            if user_turns <= 1:
-                ai_reply = "How long have you been experiencing this issue?" if lang == 'en' else "आपको यह समस्या कितने समय से हो रही है?"
-                poll_options = [{"label": "Since Today", "value": "Since Today"}, {"label": "2-3 Days", "value": "2-3 Days"}, {"label": "1 Week", "value": "1 Week"}, {"label": "More than a month", "value": "More than a month"}]
-            elif user_turns == 2:
-                ai_reply = "On a scale of 1 to 10, how severe is your pain or discomfort?" if lang == 'en' else "1 से 10 के पैमाने पर, आपका दर्द कितना तीव्र है?"
-                poll_options = [{"label": "Mild (1-3)", "value": "Mild (1-3)"}, {"label": "Moderate (4-6)", "value": "Moderate (4-6)"}, {"label": "Severe (7-9)", "value": "Severe (7-9)"}, {"label": "Unbearable (10)", "value": "Unbearable (10)"}]
-            elif user_turns == 3:
-                ai_reply = "Do you have any associated symptoms like fever, nausea, or dizziness?" if lang == 'en' else "क्या आपको बुखार, उल्टी या चक्कर जैसे लक्षण भी हैं?"
-                poll_options = [{"label": "Fever", "value": "Fever"}, {"label": "Nausea / Vomiting", "value": "Nausea / Vomiting"}, {"label": "Dizziness", "value": "Dizziness"}, {"label": "None", "value": "None"}]
-            elif user_turns == 4:
-                ai_reply = "Are you currently taking any prescription medications?" if lang == 'en' else "क्या आप वर्तमान में कोई दवा ले रहे हैं?"
-                poll_options = [{"label": "Painkillers", "value": "Painkillers"}, {"label": "Antibiotics", "value": "Antibiotics"}, {"label": "Regular BP/Sugar Meds", "value": "Regular BP/Sugar Meds"}, {"label": "None", "value": "None"}]
-            else:
-                ai_reply = "Clinical intake complete! Token generated." if lang == 'en' else "नैदानिक चेक-इन पूरा हुआ! टोकन जनरेट हो गया है।"
-
-    # Assign Token
-    existing_patient = next((r for r in PATIENT_RECORDS if r.get("patient_name") == details.get("patient_name")), None)
-    if existing_patient:
-        assigned_token = existing_patient["token"]
-    else:
-        assigned_token = CURRENT_TOKEN_COUNTER
-        CURRENT_TOKEN_COUNTER += 1
-
-    record = {
-        "token": assigned_token,
-        "patient_name": details.get("patient_name", "Walk-in Patient"),
-        "age": details.get("age", "N/A"),
-        "phone": details.get("phone", "Not Provided"),
-        "blood_group": details.get("blood_group", "N/A"),
-        "gender": details.get("gender", "N/A"),
-        "chief_complaint": history[0]["text"] if history else user_msg,
-        "pain_site": selected_site,
-        "severity": "10/10 EMERGENCY" if is_emergency else "5/10",
-        "is_red_flag": is_emergency,
-        "history": history,
-        "past_history": details.get("past_history", [])
+def detect_pain_site(text: str):
+    text = (text or "").lower()
+    sites = {
+        "Chest": ["chest", "heart"],
+        "Head": ["head", "forehead", "migraine", "headache"],
+        "Neck": ["neck", "throat"],
+        "Back": ["back", "spine"],
+        "Abdomen": ["stomach", "abdomen", "belly"],
+        "Arm": ["arm", "shoulder", "elbow"],
+        "Leg": ["leg", "knee", "ankle", "thigh"],
     }
-    
-    PATIENT_RECORDS = [r for r in PATIENT_RECORDS if r["token"] != assigned_token]
-    PATIENT_RECORDS.append(record)
+    for site, kws in sites.items():
+        if any(kw in text for kw in kws):
+            return site
+    return "General"
 
-    # Save to past history of patient
-    nfc_id = details.get("nfc_uid", "").strip().upper()
-    if nfc_id in REGISTERED_NFC_USERS:
-        REGISTERED_NFC_USERS[nfc_id]["past_history"].append({
-            "chief_complaint": record["chief_complaint"],
-            "pain_site": selected_site,
-            "date": "Today"
-        })
-    
-    await manager.broadcast(record)
+def determine_department(text: str, pain_site: Optional[str] = None):
+    text_lower = (text or "").lower()
+    if detect_emergency(text_lower): return "Emergency"
+    if any(k in text_lower for k in ["chest pain", "heart", "palpitation", "blood pressure"]): return "Cardiology"
+    if any(k in text_lower for k in ["seizure", "migraine", "numbness", "dizziness"]): return "Neurology"
+    if any(k in text_lower for k in ["fracture", "bone", "joint", "knee", "back pain"]): return "Orthopedics"
+    if any(k in text_lower for k in ["skin", "rash", "itching", "acne"]): return "Dermatology"
+    if any(k in text_lower for k in ["ear", "nose", "throat", "hearing"]): return "ENT"
+    return "General Medicine"
+
+def assign_doctor(department: str):
+    conn = get_db()
+    cursor = conn.cursor()
+    query_dept = "General Medicine" if department == "Emergency" else department
+    cursor.execute("SELECT id, doctor_id, name, department FROM doctors WHERE department = ? AND active = 1 LIMIT 1", (query_dept,))
+    doctor = cursor.fetchone()
+    conn.close()
+
+    if doctor:
+        return {
+            "assigned_doctor_id": doctor["id"],
+            "assigned_doctor_code": doctor["doctor_id"],
+            "assigned_doctor_name": doctor["name"],
+            "department": doctor["department"],
+        }
+    return {"assigned_doctor_id": None, "assigned_doctor_code": None, "assigned_doctor_name": "Duty Doctor", "department": department}
+
+# ============================================================
+# API ENDPOINTS
+# ============================================================
+
+@app.get("/")
+def root():
+    return {"status": "online", "service": "MediKiosk Clinical Intelligence Platform", "version": "35.0.0", "database": "connected"}
+
+@app.get("/health")
+def health():
+    try:
+        conn = get_db()
+        conn.execute("SELECT 1")
+        conn.close()
+        return {"status": "healthy", "database": "connected", "time": now()}
+    except Exception as e:
+        return {"status": "error", "database": "failed", "error": str(e)}
+
+@app.post("/api/doctor/login")
+@app.post("/api/auth/doctor/login")
+def doctor_login(req: DoctorLoginRequest):
+    username = (req.username or "").strip()
+    password = (req.password or "").strip()
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT id, doctor_id, name, department, phone, email, active FROM doctors
+        WHERE (LOWER(TRIM(doctor_id)) = LOWER(TRIM(?)) OR LOWER(TRIM(name)) = LOWER(TRIM(?)) OR LOWER(TRIM(email)) = LOWER(TRIM(?)))
+        AND (password = ? OR password_hash = ?) AND active = 1 LIMIT 1
+    """, (username, username, username, password, password))
+    doctor = cursor.fetchone()
+    conn.close()
+
+    if not doctor:
+        raise HTTPException(status_code=401, detail="Invalid doctor credentials")
+
+    data = dict(doctor)
+    return {"status": "success", "message": "Doctor login successful", "doctor": data, "user": data}
+
+@app.post("/api/admin/login")
+@app.post("/api/auth/admin/login")
+def admin_login(req: AdminLoginRequest):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, username FROM admins WHERE username = ? AND password = ? LIMIT 1", (req.username.strip(), req.password.strip()))
+    admin = cursor.fetchone()
+    conn.close()
+
+    if not admin:
+        raise HTTPException(status_code=401, detail="Invalid admin credentials")
+
+    data = dict(admin)
+    return {"status": "success", "admin": data, "user": data}
+
+@app.get("/api/doctor/queue")
+def doctor_queue(doctor_id: Optional[str] = Query(None)):
+    conn = get_db()
+    cursor = conn.cursor()
+    if doctor_id:
+        cursor.execute("SELECT * FROM patients WHERE status NOT IN ('Completed', 'Cancelled') AND assigned_doctor_id = ? ORDER BY emergency DESC, token ASC", (doctor_id,))
+    else:
+        cursor.execute("SELECT * FROM patients WHERE status NOT IN ('Completed', 'Cancelled') ORDER BY emergency DESC, token ASC")
+    rows = cursor.fetchall()
+    conn.close()
+    return {"status": "success", "active_queue": [patient_row_to_dict(r) for r in rows]}
+
+@app.get("/api/doctor/summary")
+def doctor_summary(doctor_id: Optional[str] = Query(None)):
+    conn = get_db()
+    cursor = conn.cursor()
+    filter_sql = "AND assigned_doctor_id = ?" if doctor_id else ""
+    params = [doctor_id] if doctor_id else []
+
+    cursor.execute(f"SELECT COUNT(*) FROM patients WHERE status NOT IN ('Completed', 'Cancelled') {filter_sql}", params)
+    active = cursor.fetchone()[0]
+
+    cursor.execute(f"SELECT COUNT(*) FROM patients WHERE status = 'Waiting' {filter_sql}", params)
+    waiting = cursor.fetchone()[0]
+
+    cursor.execute(f"SELECT COUNT(*) FROM patients WHERE emergency = 1 AND status NOT IN ('Completed', 'Cancelled') {filter_sql}", params)
+    emergency = cursor.fetchone()[0]
+
+    today = datetime.now().strftime("%Y-%m-%d") + "%"
+    completed_params = [today] + params
+    cursor.execute(f"SELECT COUNT(*) FROM patients WHERE status = 'Completed' AND completed_at LIKE ? {filter_sql}", completed_params)
+    completed_today = cursor.fetchone()[0]
+
+    if doctor_id:
+        cursor.execute("SELECT * FROM patients WHERE status NOT IN ('Completed', 'Cancelled') AND assigned_doctor_id = ? ORDER BY emergency DESC, token ASC", (doctor_id,))
+    else:
+        cursor.execute("SELECT * FROM patients WHERE status NOT IN ('Completed', 'Cancelled') ORDER BY emergency DESC, token ASC")
+    queue_rows = cursor.fetchall()
+    conn.close()
 
     return {
         "status": "success",
-        "reply": ai_reply,
-        "is_red_flag": is_emergency,
-        "poll_options": poll_options,
-        "patient_details": details,
-        "detected_site": selected_site,
-        "assigned_token": assigned_token
+        "summary": {"active_patients": active, "waiting": waiting, "emergency": emergency, "completed_today": completed_today},
+        "active_queue": [patient_row_to_dict(r) for r in queue_rows]
     }
 
-@app.get("/api/doctor/summary")
-def get_doctor_summary():
-    return {"active_queue": PATIENT_RECORDS, "archive": ARCHIVED_RECORDS}
+# Websocket endpoint
+@app.websocket("/ws/kiosk")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    connected_clients.append(websocket)
+    try:
+        await websocket.send_json({"type": "CONNECTED", "message": "MediKiosk WebSocket connected"})
+        while True:
+            data = await websocket.receive_json()
+            if data.get("type"):
+                await broadcast(data)
+    except WebSocketDisconnect:
+        pass
+    finally:
+        if websocket in connected_clients:
+            connected_clients.remove(websocket)
+
+init_database()
+
+if __name__ == "__main__":
+
+    import uvicorn
+
+    port = int(
+        os.getenv(
+            "PORT",
+            "8000"
+        )
+    )
+
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=port
+    )
