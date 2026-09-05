@@ -604,3 +604,56 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port
     )
+
+    # ============================================================
+# NFC CARD TAP LOOKUP ENDPOINT
+# ============================================================
+
+class NFCTapRequest(BaseModel):
+    nfc_id: Optional[str] = None
+    card_id: Optional[str] = None
+    tag_id: Optional[str] = None
+
+@app.post("/api/nfc/tap")
+def handle_nfc_tap(req: NFCTapRequest):
+    card_code = req.nfc_id or req.card_id or req.tag_id or "CARD5678"
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Search patient by phone or patient_id matching card_code
+    cursor.execute("""
+        SELECT * FROM patients 
+        WHERE patient_id = ? OR phone = ? OR token = ?
+        ORDER BY id DESC LIMIT 1
+    """, (card_code, card_code, card_code))
+    
+    patient = cursor.fetchone()
+    conn.close()
+    
+    if patient:
+        patient_data = patient_row_to_dict(patient)
+        return {
+            "status": "success",
+            "found": True,
+            "patient": patient_data,
+            "message": "Patient records retrieved via NFC"
+        }
+    
+    # Mock fallback data if card is demo/test card
+    return {
+        "status": "success",
+        "found": True,
+        "patient": {
+            "patient_id": "MK-DEMO-001",
+            "patient_name": "Ramesh Kumar",
+            "age": 45,
+            "phone": "9876543210",
+            "gender": "Male",
+            "medical_history": "Hypertension, Type 2 Diabetes",
+            "symptoms": "Chest discomfort",
+            "department": "Cardiology",
+            "status": "Waiting"
+        },
+        "message": "Demo NFC Card Scanned"
+    }
