@@ -18,8 +18,6 @@
         .body-part { cursor: pointer; transition: all 0.2s; fill: #334155; stroke: #64748b; stroke-width: 1.5; }
         .body-part:hover { fill: #f97316; }
         .body-part.active { fill: #ef4444 !important; stroke: #b91c1c !important; }
-        .poll-btn { transition: all 0.2s ease-in-out; }
-        .poll-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.2); }
         .pulse-nfc { animation: pulse-ring 2s infinite; }
         @keyframes pulse-ring {
             0% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.4); }
@@ -35,17 +33,17 @@
     </style>
 </head>
 
-<body class="text-slate-900 min-h-screen flex flex-col justify-between relative overflow-x-hidden" onclick="handleFirstClick()">
+<body class="text-slate-900 min-h-screen flex flex-col justify-between relative overflow-x-hidden">
 
     <!-- HEADER -->
     <header id="main-header" class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-50">
         <h1 class="text-2xl font-black text-orange-600">MediKiosk</h1>
         <div class="flex items-center gap-3">
-            <button onclick="event.stopPropagation(); openAbhaModal()" class="bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-xl text-xs font-bold hover:bg-blue-100 transition flex items-center gap-1.5">
+            <button onclick="openAbhaModal()" class="bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-xl text-xs font-bold hover:bg-blue-100 transition flex items-center gap-1.5">
                 <i data-lucide="shield-check" class="w-4 h-4 text-blue-600"></i>
                 <span>ABHA Health Lock</span>
             </button>
-            <button id="voice-guide-btn" onclick="event.stopPropagation(); toggleVoiceGuide()" class="orange-card text-white p-3 rounded-full shadow-lg hover:scale-105 transition flex items-center gap-2">
+            <button id="voice-guide-btn" onclick="toggleVoiceGuide()" class="orange-card text-white p-3 rounded-full shadow-lg hover:scale-105 transition flex items-center gap-2">
                 <i data-lucide="volume-2" id="speaker-icon" class="w-5 h-5"></i>
                 <span id="speaker-text" class="text-xs font-bold px-1 hidden md:inline">Voice Guide: ON</span>
             </button>
@@ -79,10 +77,10 @@
                 </div>
                 <div class="pt-4 border-t border-slate-100 flex flex-col gap-3">
                     <button onclick="openNfcManualModal()" class="text-xs text-orange-600 font-bold hover:underline transition flex items-center justify-center gap-1 mx-auto">
-                        <i data-lucide="keyboard" class="w-4 h-4"></i> Enter NFC / Health Card ID Manually
+                        <i data-lucide="keyboard" class="w-4 h-4"></i> Enter Health Card ID Manually
                     </button>
                     <button onclick="openAbhaModal()" class="text-xs text-blue-600 font-bold hover:underline transition flex items-center justify-center gap-1 mx-auto">
-                        <i data-lucide="shield-check" class="w-4 h-4"></i> Or Verify via ABHA Number / Address (ABDM)
+                        <i data-lucide="shield-check" class="w-4 h-4"></i> Or Verify via ABHA Number / Address
                     </button>
                 </div>
             </div>
@@ -92,12 +90,12 @@
         <div id="nfc-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 border border-slate-200 shadow-2xl">
                 <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-base text-slate-800">Enter NFC Tag / Health Card UID</h3>
+                    <h3 class="font-bold text-base text-slate-800">Enter Card UID</h3>
                     <button onclick="closeNfcManualModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
-                <input type="text" id="manual-nfc-input" value="CARD5678" placeholder="e.g. CARD5678" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold uppercase focus:outline-none focus:border-orange-500">
-                <button type="button" onclick="submitManualNfc()" class="w-full orange-card text-white py-3 rounded-xl font-bold shadow-md hover:scale-[1.02] transition text-xs flex items-center justify-center gap-2">
-                    <span>Scan & Check Database</span>
+                <input type="text" id="manual-nfc-input" value="CARD5678" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold uppercase focus:outline-none focus:border-orange-500">
+                <button type="button" onclick="submitManualNfc()" class="w-full orange-card text-white py-3 rounded-xl font-bold shadow-md text-xs flex items-center justify-center gap-2">
+                    <span>Verify Card</span>
                     <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -111,27 +109,21 @@
                         <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-black text-xs">ABDM</div>
                         <div>
                             <h3 class="font-black text-base text-slate-800">ABHA Digital Health Simulator</h3>
-                            <p class="text-[10px] text-slate-400 font-bold uppercase">Ayushman Bharat Digital Mission</p>
                         </div>
                     </div>
                     <button onclick="closeAbhaModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
                 <div id="abha-step-1" class="space-y-4">
-                    <div>
-                        <label class="text-xs font-bold text-slate-600 block mb-1">Enter 14-Digit ABHA Number or ABHA Address</label>
-                        <input type="text" id="abha-input" value="14-9876-5432-1000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-blue-500">
-                    </div>
+                    <input type="text" id="abha-input" value="14-9876-5432-1000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none">
                     <button type="button" onclick="requestAbhaOtp()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition text-xs">
-                        Fetch Health Profile & Send OTP ➔
+                        Fetch Profile & Send OTP
                     </button>
                 </div>
                 <div id="abha-step-2" class="hidden space-y-4">
-                    <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-xs text-amber-800">
-                        Demo OTP sent. Use Demo OTP: <strong class="font-black">123456</strong>
-                    </div>
+                    <p class="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200">Demo OTP: <strong>123456</strong></p>
                     <input type="text" id="abha-otp-input" maxlength="6" value="123456" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-center text-lg font-black focus:outline-none">
                     <button type="button" onclick="verifyAbhaOtp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold transition text-xs">
-                        Verify OTP & Sync Profile ➔
+                        Verify OTP
                     </button>
                 </div>
             </div>
@@ -142,10 +134,7 @@
             <div class="mx-auto w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
                 <i data-lucide="shield-check" class="w-10 h-10 text-emerald-600"></i>
             </div>
-            <div>
-                <p class="text-xs font-black text-emerald-600 uppercase tracking-widest">Digital Health Identity Verified</p>
-                <h2 class="text-3xl font-black text-slate-900 mt-2">Patient Details</h2>
-            </div>
+            <h2 class="text-3xl font-black text-slate-900">Patient Details</h2>
             <div class="bg-slate-50 border border-slate-200 rounded-3xl p-5 text-left space-y-3">
                 <div class="flex justify-between border-b pb-2"><span class="text-xs font-bold text-slate-400">NAME</span><span id="nfc-patient-name" class="text-sm font-black">--</span></div>
                 <div class="flex justify-between border-b pb-2"><span class="text-xs font-bold text-slate-400">AGE / GENDER</span><span id="nfc-patient-age" class="text-sm font-black">--</span></div>
@@ -153,7 +142,7 @@
                 <div class="flex justify-between border-b pb-2"><span class="text-xs font-bold text-slate-400">ID / ABHA</span><span id="nfc-patient-id" class="text-sm font-black">--</span></div>
             </div>
             <button onclick="continueFromPatientDetails()" class="w-full orange-card text-white p-5 rounded-2xl font-black text-lg shadow-lg hover:scale-[1.02] transition">
-                Continue to Intake ➔
+                Continue to Consultation ➔
             </button>
         </section>
 
@@ -181,15 +170,37 @@
             </div>
         </section>
 
-        <!-- CHAT PAGE WITH INTEGRATED SILHOUETTE MAP -->
+        <!-- VOICE PAGE -->
+        <section id="voice-page" class="hidden w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
+            <button type="button" onclick="goBackToWelcome()" class="text-xs text-orange-600 font-bold flex items-center gap-1">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
+            </button>
+            <h2 class="text-2xl font-black">Voice Consultation Active</h2>
+            <button id="mic-btn" type="button" onclick="toggleMicRecording()" class="w-32 h-32 orange-card text-white rounded-full flex flex-col items-center justify-center mx-auto shadow-xl transition hover:scale-105">
+                <i data-lucide="mic" class="w-12 h-12"></i>
+                <span id="mic-status" class="text-[10px] font-bold mt-1 uppercase">Tap Mic to Speak</span>
+            </button>
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left space-y-3">
+                <div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">You Said:</span>
+                    <p id="voice-user-text" class="text-slate-700 font-semibold italic text-sm">"Tap microphone and speak..."</p>
+                </div>
+                <div class="border-t border-slate-200 pt-3">
+                    <span class="text-[10px] font-bold text-orange-500 uppercase">AI Assistant:</span>
+                    <p id="voice-ai-text" class="text-orange-950 font-bold text-sm">"Waiting for your speech..."</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CHAT PAGE -->
         <section id="chat-page" class="hidden w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div id="chat-container" class="lg:col-span-2 bg-white border border-slate-200 rounded-3xl shadow-xl flex flex-col h-[650px] overflow-hidden">
                 <div class="bg-slate-900 text-white p-4 px-6 flex justify-between items-center">
                     <div class="flex items-center space-x-3">
                         <button type="button" onclick="goBackToWelcome()" class="text-slate-400 hover:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
                         <div>
-                            <h3 class="font-bold text-sm">MediKiosk AI Assistant</h3>
-                            <p id="patient-identity-subtitle" class="text-[11px] text-orange-400">Groq AI Active</p>
+                            <h3 class="font-bold text-sm">MediKiosk Assistant</h3>
+                            <p class="text-[11px] text-orange-400">Online</p>
                         </div>
                     </div>
                 </div>
@@ -198,17 +209,17 @@
 
                 <div id="chat-input-area" class="p-4 bg-white border-t border-slate-100">
                     <form id="chat-form" onsubmit="handleChatSubmit(event)" class="flex items-center gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200">
-                        <input type="text" id="chat-input" placeholder="Type symptoms or select body region..." autocomplete="off" required class="flex-1 bg-transparent px-4 py-2 text-sm text-slate-800 focus:outline-none">
+                        <input type="text" id="chat-input" placeholder="Type symptoms or tap body region..." autocomplete="off" required class="flex-1 bg-transparent px-4 py-2 text-sm text-slate-800 focus:outline-none">
                         <button type="submit" class="orange-card text-white p-3 rounded-xl"><i data-lucide="send" class="w-4 h-4"></i></button>
                     </form>
                 </div>
             </div>
 
-            <!-- INTERACTIVE BODY SILHOUETTE (ALWAYS READY) -->
+            <!-- INTERACTIVE BODY SILHOUETTE -->
             <div id="side-body-panel" class="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex flex-col items-center justify-between space-y-4 shadow-xl">
                 <div class="text-center">
                     <h3 class="text-sm font-black">Interactive Body Silhouette</h3>
-                    <p class="text-[11px] text-slate-400">Tap affected area to mark pain site</p>
+                    <p class="text-[11px] text-slate-400">Tap affected area to select pain site</p>
                 </div>
 
                 <div class="relative w-40 h-80 flex justify-center items-center">
@@ -233,24 +244,41 @@
     </main>
 
     <footer class="text-center text-xs text-slate-400 py-3 border-t border-slate-100">
-        MediKiosk Patient Terminal • Backend Connected
+        MediKiosk Patient Terminal • Backend Active
     </footer>
 
     <script>
         const BASE_API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
             ? "http://127.0.0.1:8000"
-            : "https://medikiosk-backend-8r.onrender.com";
+            : "https://medikiosk-backend-8rs2.onrender.com";
 
         let currentLang = "en";
         let chatMemory = [];
         let patientDetails = {};
         let selectedPainSite = "General";
+        let voiceGuideEnabled = true;
+        let recognition = null;
+        let isRecording = false;
 
-        function handleFirstClick() {}
         function openAbhaModal() { document.getElementById('abha-modal').classList.remove('hidden'); }
         function closeAbhaModal() { document.getElementById('abha-modal').classList.add('hidden'); }
         function openNfcManualModal() { document.getElementById('nfc-modal').classList.remove('hidden'); }
         function closeNfcManualModal() { document.getElementById('nfc-modal').classList.add('hidden'); }
+
+        function toggleVoiceGuide() {
+            voiceGuideEnabled = !voiceGuideEnabled;
+            const text = document.getElementById("speaker-text");
+            if (text) text.innerText = voiceGuideEnabled ? "Voice Guide: ON" : "Voice Guide: OFF";
+            if (!voiceGuideEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
+        }
+
+        function speakText(text) {
+            if (!voiceGuideEnabled || !("speechSynthesis" in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = currentLang === "hi" ? "hi-IN" : "en-IN";
+            window.speechSynthesis.speak(utterance);
+        }
 
         function submitManualNfc() {
             const val = document.getElementById('manual-nfc-input').value.trim();
@@ -292,6 +320,7 @@
 
         function openChatMode() {
             document.getElementById("landing-page").classList.add("hidden");
+            document.getElementById("voice-page").classList.add("hidden");
             document.getElementById("chat-page").classList.remove("hidden");
 
             const chatBox = document.getElementById("chat-box");
@@ -299,15 +328,24 @@
                 <div class="flex items-start space-x-3">
                     <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black">AI</div>
                     <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-md">
-                        Hello ${patientDetails?.patient_name || 'Patient'}! I am MediKiosk Groq AI Assistant. Please describe your health problem.
+                        Hello ${patientDetails?.patient_name || 'Patient'}! Welcome to MediKiosk. Please describe your symptoms or health issue.
                     </div>
                 </div>
             `;
-            chatMemory.push({ sender: "assistant", text: "Hello! Describe your health problem." });
+            chatMemory = [{ sender: "assistant", text: "Hello! Welcome to MediKiosk. Please describe your symptoms or health issue." }];
+            speakText("Hello! Welcome to MediKiosk. Please describe your symptoms or health issue.");
+        }
+
+        function openVoiceMode() {
+            document.getElementById("landing-page").classList.add("hidden");
+            document.getElementById("chat-page").classList.add("hidden");
+            document.getElementById("voice-page").classList.remove("hidden");
+            initSpeechRecognition();
         }
 
         function goBackToWelcome() {
             document.getElementById("chat-page").classList.add("hidden");
+            document.getElementById("voice-page").classList.add("hidden");
             document.getElementById("landing-page").classList.remove("hidden");
         }
 
@@ -316,6 +354,11 @@
             if (element) element.classList.add("active");
             selectedPainSite = siteName;
             document.getElementById("selected-site-tag").innerText = siteName;
+
+            const input = document.getElementById("chat-input");
+            if (input) {
+                input.value = `I have pain in my ${siteName.toLowerCase()}`;
+            }
         }
 
         async function handleChatSubmit(e) {
@@ -348,14 +391,17 @@
                 });
 
                 const data = await res.json();
-                chatMemory.push({ sender: "assistant", text: data.reply });
+                const aiReply = data.reply || "Thank you. Your response has been logged.";
+                chatMemory.push({ sender: "assistant", text: aiReply });
 
                 chatBox.innerHTML += `
                     <div class="flex items-start space-x-3">
                         <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black flex-shrink-0">AI</div>
-                        <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-md">${data.reply}</div>
+                        <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-md">${aiReply}</div>
                     </div>
                 `;
+
+                speakText(aiReply);
 
                 if (data.is_red_flag) {
                     document.getElementById('red-flag-banner').classList.remove('hidden');
@@ -364,6 +410,83 @@
                 chatBox.scrollTop = chatBox.scrollHeight;
             } catch (err) {
                 console.error("AI Error:", err);
+            }
+        }
+
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("Speech Recognition is not supported on this browser.");
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = currentLang === "hi" ? "hi-IN" : "en-US";
+
+            recognition.onstart = () => {
+                isRecording = true;
+                document.getElementById("mic-status").innerText = "Listening...";
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById("voice-user-text").innerText = `"${transcript}"`;
+                sendVoiceMessageToAI(transcript);
+            };
+
+            recognition.onerror = (event) => {
+                isRecording = false;
+                document.getElementById("mic-status").innerText = "Tap Mic to Speak";
+            };
+
+            recognition.onend = () => {
+                isRecording = false;
+                document.getElementById("mic-status").innerText = "Tap Mic to Speak";
+            };
+        }
+
+        function toggleMicRecording() {
+            if (!recognition) initSpeechRecognition();
+            if (!recognition) return;
+
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        }
+
+        async function sendVoiceMessageToAI(userMsg) {
+            document.getElementById("voice-ai-text").innerText = "Thinking...";
+            chatMemory.push({ sender: "user", text: userMsg });
+
+            try {
+                const res = await fetch(`${BASE_API_URL}/api/chat/ai-assistant`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_message: userMsg,
+                        chat_history: chatMemory,
+                        language: currentLang,
+                        patient_details: patientDetails,
+                        pain_site: selectedPainSite
+                    })
+                });
+
+                const data = await res.json();
+                const aiReply = data.reply || "I have received your response.";
+                chatMemory.push({ sender: "assistant", text: aiReply });
+
+                document.getElementById("voice-ai-text").innerText = `"${aiReply}"`;
+                speakText(aiReply);
+
+                if (data.is_red_flag) {
+                    document.getElementById('red-flag-banner').classList.remove('hidden');
+                }
+            } catch (err) {
+                document.getElementById("voice-ai-text").innerText = "Error connecting to AI service.";
             }
         }
 
