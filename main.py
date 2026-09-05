@@ -21,7 +21,6 @@ import io
 import shutil
 import uuid
 import json
-from groq import Groq
 
 # ============================================================
 # APP INITIALIZATION
