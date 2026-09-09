@@ -217,7 +217,8 @@
     <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex justify-center items-center">
 
         <!-- PAGE 1: NFC STANDBY SCREEN -->
-        <section id="nfc-page" class="w-full text-center space-y-6 my-auto max-w-2xl">
+        <section id="nfc-page" class="w-full text-center space-y-6 my-auto max-w-2xl cursor-pointer"
+            onclick="enableAudioContext()">
 
             <!-- WELCOME HEADER BANNER -->
             <div class="space-y-2">
@@ -496,10 +497,17 @@
         let timeLeft = 30;
         let recognition = null;
         let isRecording = false;
+        let hasInteracted = false;
 
         function enableAudioContext() {
-            if (window.speechSynthesis && window.speechSynthesis.paused) {
-                window.speechSynthesis.resume();
+            if (window.speechSynthesis) {
+                if (window.speechSynthesis.paused) {
+                    window.speechSynthesis.resume();
+                }
+            }
+            if (!hasInteracted) {
+                hasInteracted = true;
+                triggerPageVoiceGuide(pageHistory[pageHistory.length - 1]);
             }
         }
 
@@ -536,7 +544,7 @@
 
         function triggerPageVoiceGuide(pageId) {
             if (pageId === "nfc-page") {
-                speakText("Welcome to the hospital. Please tap your health card or NFC tag to enter.");
+                speakText("Welcome to the hospital. Please tap your health card or enter card details.");
             } else if (pageId === "patient-details-page") {
                 speakText("Patient details verified. Please review your information.");
             } else if (pageId === "lang-page") {
@@ -563,8 +571,18 @@
         function speakText(text) {
             if (!voiceGuideEnabled || !("speechSynthesis" in window)) return;
             window.speechSynthesis.cancel();
+
             const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.95;
+            utterance.pitch = 1.0;
             utterance.lang = currentLang === "hi" ? "hi-IN" : "en-IN";
+
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                const targetVoice = voices.find(v => v.lang.includes(currentLang === "hi" ? "hi" : "en"));
+                if (targetVoice) utterance.voice = targetVoice;
+            }
+
             window.speechSynthesis.speak(utterance);
         }
 
@@ -877,7 +895,13 @@
 
         window.addEventListener("load", () => {
             lucide.createIcons();
-            triggerPageVoiceGuide("nfc-page");
+            if (window.speechSynthesis) {
+                window.speechSynthesis.onvoiceschanged = () => {
+                    if (hasInteracted) triggerPageVoiceGuide("nfc-page");
+                };
+            }
+            window.addEventListener("click", enableAudioContext, { once: true });
+            window.addEventListener("touchstart", enableAudioContext, { once: true });
         });
     </script>
 </body>
