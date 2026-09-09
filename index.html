@@ -8,58 +8,126 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
     <style>
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
             background: radial-gradient(circle at top left, rgba(249, 115, 22, 0.08), transparent 35%),
-                        radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.08), transparent 35%),
-                        #f8fafc; 
+                radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.08), transparent 35%),
+                #f8fafc;
         }
-        .orange-card { background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); }
-        .bubble-user { background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); }
-        .bubble-ai { background: #ffffff; border: 1px solid #e2e8f0; }
-        .body-part { cursor: pointer; transition: all 0.2s; fill: #334155; stroke: #64748b; stroke-width: 1.5; }
-        .body-part:hover { fill: #f97316; }
-        .body-part.active { fill: #ef4444 !important; stroke: #b91c1c !important; }
-        .poll-btn { transition: all 0.2s ease-in-out; }
-        .poll-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.2); }
-        
+
+        .orange-card {
+            background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+        }
+
+        .bubble-user {
+            background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+        }
+
+        .bubble-ai {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+        }
+
+        .body-part {
+            cursor: pointer;
+            transition: all 0.2s;
+            fill: #334155;
+            stroke: #64748b;
+            stroke-width: 1.5;
+        }
+
+        .body-part:hover {
+            fill: #f97316;
+        }
+
+        .body-part.active {
+            fill: #ef4444 !important;
+            stroke: #b91c1c !important;
+        }
+
+        .poll-btn {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .poll-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.2);
+        }
+
         .nfc-ripple-container {
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
         }
+
         .nfc-ripple {
             position: absolute;
             border: 2px solid rgba(249, 115, 22, 0.4);
             border-radius: 50%;
             animation: ripple-out 2.5s infinite cubic-bezier(0, 0.2, 0.8, 1);
         }
+
         .nfc-ripple:nth-child(2) {
             animation-delay: -0.8s;
         }
+
         .nfc-ripple:nth-child(3) {
             animation-delay: -1.6s;
         }
+
         @keyframes ripple-out {
-            0% { width: 80px; height: 80px; opacity: 1; }
-            100% { width: 220px; height: 220px; opacity: 0; }
+            0% {
+                width: 80px;
+                height: 80px;
+                opacity: 1;
+            }
+
+            100% {
+                width: 220px;
+                height: 220px;
+                opacity: 0;
+            }
         }
 
-        .emergency-glow { animation: emergencyPulse 1s infinite; }
+        .emergency-glow {
+            animation: emergencyPulse 1s infinite;
+        }
+
         @keyframes emergencyPulse {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
         }
-        .flash-bounce { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        .flash-bounce {
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
         @keyframes popIn {
-            0% { opacity: 0; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1); }
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
+
         .online-dot {
             width: 8px;
             height: 8px;
@@ -69,34 +137,50 @@
             box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
             animation: pulse-dot 1.5s infinite;
         }
+
         @keyframes pulse-dot {
-            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-            70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+            }
         }
     </style>
 </head>
 
-<body class="text-slate-900 min-h-screen flex flex-col justify-between relative overflow-x-hidden" onclick="enableAudioContext()">
+<body class="text-slate-900 min-h-screen flex flex-col justify-between relative overflow-x-hidden"
+    onclick="enableAudioContext()">
 
     <!-- HEADER -->
-    <header id="main-header" class="bg-white/90 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-50">
+    <header id="main-header"
+        class="bg-white/90 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-50">
         <div class="flex items-center gap-3">
-            <button id="global-back-btn" onclick="goBack()" class="hidden bg-slate-100 text-slate-700 hover:bg-orange-100 hover:text-orange-600 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1">
+            <button id="global-back-btn" onclick="goBack()"
+                class="hidden bg-slate-100 text-slate-700 hover:bg-orange-100 hover:text-orange-600 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
                 <span>Back</span>
             </button>
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white font-black text-sm">M</div>
+                <div
+                    class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white font-black text-sm">
+                    M</div>
                 <h1 class="text-2xl font-black text-slate-900 tracking-tight">MediKiosk</h1>
             </div>
         </div>
         <div class="flex items-center gap-3">
-            <button onclick="openAbhaModal()" class="bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-100 transition flex items-center gap-2">
+            <button onclick="openAbhaModal()"
+                class="bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-100 transition flex items-center gap-2">
                 <i data-lucide="shield-check" class="w-4 h-4 text-blue-600"></i>
                 <span>ABHA Health Lock</span>
             </button>
-            <button id="voice-guide-btn" onclick="toggleVoiceGuide()" class="orange-card text-white px-4 py-2.5 rounded-xl shadow-md hover:scale-105 transition flex items-center gap-2">
+            <button id="voice-guide-btn" onclick="toggleVoiceGuide()"
+                class="orange-card text-white px-4 py-2.5 rounded-xl shadow-md hover:scale-105 transition flex items-center gap-2">
                 <i data-lucide="volume-2" id="speaker-icon" class="w-4 h-4"></i>
                 <span id="speaker-text" class="text-xs font-bold hidden md:inline">Voice Guide: ON</span>
             </button>
@@ -104,39 +188,49 @@
     </header>
 
     <!-- EMERGENCY BANNER -->
-    <div id="red-flag-banner" class="hidden bg-red-600 text-white px-6 py-4 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 emergency-glow">
+    <div id="red-flag-banner"
+        class="hidden bg-red-600 text-white px-6 py-4 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 emergency-glow">
         <div class="flex items-center space-x-4">
             <i data-lucide="siren" class="w-8 h-8"></i>
             <div>
                 <h3 class="font-extrabold text-base">🚨 EMERGENCY CASE DETECTED</h3>
-                <p class="text-xs text-red-100">Your symptoms indicate high risk. Marked for immediate Triage Priority.</p>
+                <p class="text-xs text-red-100">Your symptoms indicate high risk. Marked for immediate Triage Priority.
+                </p>
             </div>
         </div>
         <span class="bg-white text-red-600 font-black px-4 py-2 rounded-xl text-xs uppercase">PRIORITY TRIAGE</span>
     </div>
 
     <!-- OPD TOKEN COMPLETED FLASH MODAL -->
-    <div id="token-flash-modal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-8 max-w-md w-full text-center space-y-6 border border-slate-200 shadow-2xl flash-bounce">
-            <div class="w-20 h-20 orange-card text-white rounded-full flex items-center justify-center mx-auto shadow-xl">
+    <div id="token-flash-modal"
+        class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-3xl p-8 max-w-md w-full text-center space-y-6 border border-slate-200 shadow-2xl flash-bounce">
+            <div
+                class="w-20 h-20 orange-card text-white rounded-full flex items-center justify-center mx-auto shadow-xl">
                 <i data-lucide="check-circle-2" class="w-10 h-10"></i>
             </div>
             <div>
-                <span class="bg-orange-100 text-orange-700 font-black px-4 py-1.5 rounded-full text-xs tracking-wider uppercase">Registration Completed</span>
+                <span
+                    class="bg-orange-100 text-orange-700 font-black px-4 py-1.5 rounded-full text-xs tracking-wider uppercase">Registration
+                    Completed</span>
                 <h2 class="text-3xl font-black text-slate-900 mt-3">OPD Token Generated</h2>
                 <div class="my-4 p-4 bg-orange-50 border-2 border-orange-400 rounded-2xl">
                     <span class="text-xs text-orange-600 font-bold block">YOUR TOKEN NUMBER</span>
                     <span id="flash-token-id" class="text-5xl font-black text-orange-600">#101</span>
                 </div>
-                <p class="text-sm font-bold text-slate-600">Please report to the <span class="text-orange-600 font-black">Waiting Area</span>. Your doctor will call you shortly.</p>
+                <p class="text-sm font-bold text-slate-600">Please report to the <span
+                        class="text-orange-600 font-black">Waiting Area</span>. Your doctor will call you shortly.</p>
             </div>
-            
+
             <div class="space-y-3">
-                <button onclick="closeTokenModalAndReset()" class="w-full orange-card text-white py-4 rounded-2xl font-black text-base shadow-lg hover:scale-105 transition flex items-center justify-center gap-2">
+                <button onclick="closeTokenModalAndReset()"
+                    class="w-full orange-card text-white py-4 rounded-2xl font-black text-base shadow-lg hover:scale-105 transition flex items-center justify-center gap-2">
                     <span>Done & Return to Main Screen</span>
                 </button>
                 <div class="text-xs font-bold text-slate-400">
-                    Next patient screen in <span id="reset-timer-count" class="text-orange-600 font-black text-sm">30</span>s
+                    Next patient screen in <span id="reset-timer-count"
+                        class="text-orange-600 font-black text-sm">30</span>s
                 </div>
             </div>
         </div>
@@ -146,10 +240,12 @@
     <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex justify-center items-center">
 
         <!-- PAGE 1: NFC STANDBY SCREEN -->
-        <section id="nfc-page" class="w-full text-center space-y-6 my-auto max-w-2xl cursor-pointer" onclick="enableAudioContext()">
-            
+        <section id="nfc-page" class="w-full text-center space-y-6 my-auto max-w-2xl cursor-pointer"
+            onclick="enableAudioContext()">
+
             <div class="space-y-2">
-                <span class="bg-orange-100 text-orange-700 px-4 py-1.5 rounded-full text-xs font-extrabold tracking-wider uppercase">
+                <span
+                    class="bg-orange-100 text-orange-700 px-4 py-1.5 rounded-full text-xs font-extrabold tracking-wider uppercase">
                     Smart OPD Registration Kiosk
                 </span>
                 <h1 class="text-3xl md:text-4xl font-black text-slate-900 leading-tight">
@@ -161,28 +257,33 @@
                 </p>
             </div>
 
-            <div class="bg-white/90 backdrop-blur-md border border-slate-200/80 p-8 md:p-10 rounded-3xl shadow-2xl space-y-8 relative overflow-hidden">
-                
+            <div
+                class="bg-white/90 backdrop-blur-md border border-slate-200/80 p-8 md:p-10 rounded-3xl shadow-2xl space-y-8 relative overflow-hidden">
+
                 <div class="nfc-ripple-container py-6">
                     <div class="nfc-ripple"></div>
                     <div class="nfc-ripple"></div>
                     <div class="nfc-ripple"></div>
-                    <div class="w-28 h-28 orange-card text-white rounded-full flex items-center justify-center shadow-xl relative z-10 transition hover:scale-105">
+                    <div
+                        class="w-28 h-28 orange-card text-white rounded-full flex items-center justify-center shadow-xl relative z-10 transition hover:scale-105">
                         <i data-lucide="contactless" class="w-14 h-14"></i>
                     </div>
                 </div>
 
                 <div class="space-y-2">
                     <h2 class="text-2xl font-black text-slate-900">Tap Health Card or NFC Tag Here</h2>
-                    <p class="text-xs text-slate-400 font-semibold">Keep your card close to the reader for quick verification</p>
+                    <p class="text-xs text-slate-400 font-semibold">Keep your card close to the reader for quick
+                        verification</p>
                 </div>
 
                 <div class="pt-6 border-t border-slate-100 flex flex-col sm:flex-row justify-center items-center gap-4">
-                    <button onclick="openNfcManualModal()" class="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-800 px-5 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2">
+                    <button onclick="openNfcManualModal()"
+                        class="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-800 px-5 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2">
                         <i data-lucide="keyboard" class="w-4 h-4 text-orange-600"></i>
                         <span>Enter Card ID Manually</span>
                     </button>
-                    <button onclick="openAbhaModal()" class="w-full sm:w-auto bg-blue-50 hover:bg-blue-100 text-blue-700 px-5 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2 border border-blue-200">
+                    <button onclick="openAbhaModal()"
+                        class="w-full sm:w-auto bg-blue-50 hover:bg-blue-100 text-blue-700 px-5 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2 border border-blue-200">
                         <i data-lucide="shield-check" class="w-4 h-4 text-blue-600"></i>
                         <span>Verify via ABHA Number</span>
                     </button>
@@ -191,14 +292,18 @@
         </section>
 
         <!-- MANUAL NFC MODAL -->
-        <div id="nfc-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div id="nfc-modal"
+            class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 border border-slate-200 shadow-2xl">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-base text-slate-800">Enter Card UID</h3>
-                    <button onclick="closeNfcManualModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    <button onclick="closeNfcManualModal()" class="text-slate-400 hover:text-slate-600"><i
+                            data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
-                <input type="text" id="manual-nfc-input" value="CARD5678" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold uppercase focus:outline-none focus:border-orange-500">
-                <button type="button" onclick="submitManualNfc()" class="w-full orange-card text-white py-3 rounded-xl font-bold shadow-md text-xs flex items-center justify-center gap-2">
+                <input type="text" id="manual-nfc-input" value="CARD5678"
+                    class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold uppercase focus:outline-none focus:border-orange-500">
+                <button type="button" onclick="submitManualNfc()"
+                    class="w-full orange-card text-white py-3 rounded-xl font-bold shadow-md text-xs flex items-center justify-center gap-2">
                     <span>Verify Card</span>
                     <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
@@ -206,46 +311,61 @@
         </div>
 
         <!-- ABHA SIMULATOR MODAL -->
-        <div id="abha-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div id="abha-modal"
+            class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-3xl p-6 max-w-md w-full space-y-5 border border-slate-200 shadow-2xl">
                 <div class="flex justify-between items-center border-b border-slate-100 pb-3">
                     <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-black text-xs">ABDM</div>
+                        <div
+                            class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-black text-xs">
+                            ABDM</div>
                         <div>
                             <h3 class="font-black text-base text-slate-800">ABHA Digital Health Simulator</h3>
                         </div>
                     </div>
-                    <button onclick="closeAbhaModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    <button onclick="closeAbhaModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"
+                            class="w-5 h-5"></i></button>
                 </div>
                 <div id="abha-step-1" class="space-y-4">
-                    <input type="text" id="abha-input" value="14-9876-5432-1000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none">
-                    <button type="button" onclick="requestAbhaOtp()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition text-xs">
+                    <input type="text" id="abha-input" value="14-9876-5432-1000"
+                        class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none">
+                    <button type="button" onclick="requestAbhaOtp()"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition text-xs">
                         Fetch Profile & Send OTP
                     </button>
                 </div>
                 <div id="abha-step-2" class="hidden space-y-4">
-                    <p class="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200">Demo OTP: <strong>123456</strong></p>
-                    <input type="text" id="abha-otp-input" maxlength="6" value="123456" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-center text-lg font-black focus:outline-none">
-                    <button type="button" onclick="verifyAbhaOtp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold transition text-xs">
+                    <p class="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200">Demo OTP:
+                        <strong>123456</strong></p>
+                    <input type="text" id="abha-otp-input" maxlength="6" value="123456"
+                        class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-center text-lg font-black focus:outline-none">
+                    <button type="button" onclick="verifyAbhaOtp()"
+                        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold transition text-xs">
                         Verify OTP
                     </button>
                 </div>
             </div>
-        </div
-
-        <!-- PAGE 2: VERIFIED PATIENT DETAILS -->
-        <section id="patient-details-page" class="hidden w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
+        </div <!-- PAGE 2: VERIFIED PATIENT DETAILS -->
+        <section id="patient-details-page"
+            class="hidden w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
             <div class="mx-auto w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
                 <i data-lucide="shield-check" class="w-10 h-10 text-emerald-600"></i>
             </div>
             <h2 class="text-3xl font-black text-slate-900">Patient Details</h2>
             <div class="bg-slate-50 border border-slate-200 rounded-3xl p-5 text-left space-y-3">
-                <div class="flex justify-between border-b pb-2"><span class="text-xs font-bold text-slate-400">NAME</span><span id="nfc-patient-name" class="text-sm font-black">--</span></div>
-                <div class="flex justify-between border-b pb-2"><span class="text-xs font-bold text-slate-400">AGE / GENDER</span><span id="nfc-patient-age" class="text-sm font-black">--</span></div>
-                <div class="flex justify-between border-b pb-2"><span class="text-xs font-bold text-slate-400">PHONE</span><span id="nfc-patient-phone" class="text-sm font-black">--</span></div>
-                <div class="flex justify-between border-b pb-2"><span class="text-xs font-bold text-slate-400">ID / ABHA</span><span id="nfc-patient-id" class="text-sm font-black">--</span></div>
+                <div class="flex justify-between border-b pb-2"><span
+                        class="text-xs font-bold text-slate-400">NAME</span><span id="nfc-patient-name"
+                        class="text-sm font-black">--</span></div>
+                <div class="flex justify-between border-b pb-2"><span class="text-xs font-bold text-slate-400">AGE /
+                        GENDER</span><span id="nfc-patient-age" class="text-sm font-black">--</span></div>
+                <div class="flex justify-between border-b pb-2"><span
+                        class="text-xs font-bold text-slate-400">PHONE</span><span id="nfc-patient-phone"
+                        class="text-sm font-black">--</span></div>
+                <div class="flex justify-between border-b pb-2"><span class="text-xs font-bold text-slate-400">ID /
+                        ABHA</span><span id="nfc-patient-id" class="text-sm font-black">--</span></div>
             </div>
-            <button onclick="continueFromPatientDetails()" class="w-full orange-card text-white p-5 rounded-2xl font-black text-lg shadow-lg hover:scale-[1.02] transition">
+            <button onclick="continueFromPatientDetails()"
+                class="w-full orange-card text-white p-5 rounded-2xl font-black text-lg shadow-lg hover:scale-[1.02] transition">
                 Continue to Language Selection ➔
             </button>
         </section>
@@ -254,8 +374,10 @@
         <section id="lang-page" class="hidden w-full text-center space-y-8 my-auto max-w-xl">
             <h1 class="text-4xl font-black">Select Language / भाषा चुनें</h1>
             <div class="grid grid-cols-2 gap-6">
-                <button type="button" onclick="selectLanguage('en')" class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">English</button>
-                <button type="button" onclick="selectLanguage('hi')" class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">हिंदी</button>
+                <button type="button" onclick="selectLanguage('en')"
+                    class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">English</button>
+                <button type="button" onclick="selectLanguage('hi')"
+                    class="orange-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">हिंदी</button>
             </div>
         </section>
 
@@ -263,11 +385,13 @@
         <section id="landing-page" class="hidden w-full text-center space-y-8 my-auto max-w-2xl">
             <h1 class="text-4xl font-black text-orange-600">Welcome To MediKiosk</h1>
             <div class="grid grid-cols-2 gap-6">
-                <button type="button" onclick="openChatMode()" class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
+                <button type="button" onclick="openChatMode()"
+                    class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
                     <i data-lucide="message-square" class="w-8 h-8 mx-auto"></i>
                     <div>Text Consultation</div>
                 </button>
-                <button type="button" onclick="openVoiceMode()" class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
+                <button type="button" onclick="openVoiceMode()"
+                    class="orange-card text-white p-8 rounded-3xl font-bold text-xl shadow-lg space-y-2 hover:scale-105 transition">
                     <i data-lucide="mic" class="w-8 h-8 mx-auto"></i>
                     <div>Voice Consultation</div>
                 </button>
@@ -275,16 +399,19 @@
         </section>
 
         <!-- PAGE 5: VOICE CONSULTATION -->
-        <section id="voice-page" class="hidden w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
+        <section id="voice-page"
+            class="hidden w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-8 shadow-xl text-center space-y-6">
             <h2 class="text-2xl font-black">Voice Consultation Active</h2>
-            <button id="mic-btn" type="button" onclick="toggleMicRecording()" class="w-32 h-32 orange-card text-white rounded-full flex flex-col items-center justify-center mx-auto shadow-xl transition hover:scale-105">
+            <button id="mic-btn" type="button" onclick="toggleMicRecording()"
+                class="w-32 h-32 orange-card text-white rounded-full flex flex-col items-center justify-center mx-auto shadow-xl transition hover:scale-105">
                 <i data-lucide="mic" class="w-12 h-12"></i>
                 <span id="mic-status" class="text-[10px] font-bold mt-1 uppercase">Tap Mic to Speak</span>
             </button>
             <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left space-y-3">
                 <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase">You Said:</span>
-                    <p id="voice-user-text" class="text-slate-700 font-semibold italic text-sm">"Tap microphone and speak..."</p>
+                    <p id="voice-user-text" class="text-slate-700 font-semibold italic text-sm">"Tap microphone and
+                        speak..."</p>
                 </div>
                 <div class="border-t border-slate-200 pt-3">
                     <span class="text-[10px] font-bold text-orange-500 uppercase">Groq AI Assistant:</span>
@@ -295,7 +422,8 @@
 
         <!-- PAGE 6: CHAT CONSULTATION & BODY SILHOUETTE -->
         <section id="chat-page" class="hidden w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div id="chat-container" class="lg:col-span-2 bg-white border border-slate-200 rounded-3xl shadow-xl flex flex-col h-[650px] overflow-hidden">
+            <div id="chat-container"
+                class="lg:col-span-2 bg-white border border-slate-200 rounded-3xl shadow-xl flex flex-col h-[650px] overflow-hidden">
                 <div class="bg-slate-900 text-white p-4 px-6 flex justify-between items-center">
                     <div class="flex items-center space-x-3">
                         <div>
@@ -306,7 +434,8 @@
                         </div>
                     </div>
 
-                    <div id="patient-token-badge" class="bg-orange-500/20 border border-orange-500/50 px-3 py-1.5 rounded-xl flex items-center gap-2">
+                    <div id="patient-token-badge"
+                        class="bg-orange-500/20 border border-orange-500/50 px-3 py-1.5 rounded-xl flex items-center gap-2">
                         <span class="text-[10px] text-orange-300 font-bold uppercase">OPD TOKEN:</span>
                         <span id="token-badge-number" class="text-sm font-black text-orange-400">#101</span>
                     </div>
@@ -316,7 +445,8 @@
 
                 <div class="px-4 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
                     <span class="font-bold text-slate-500">Have Previous Prescription/Report?</span>
-                    <label class="cursor-pointer bg-slate-200 hover:bg-slate-300 text-slate-800 px-3 py-1 rounded-lg font-bold flex items-center gap-1 transition">
+                    <label
+                        class="cursor-pointer bg-slate-200 hover:bg-slate-300 text-slate-800 px-3 py-1 rounded-lg font-bold flex items-center gap-1 transition">
                         <i data-lucide="paperclip" class="w-3.5 h-3.5"></i>
                         <span>Upload Prescription (OCR)</span>
                         <input type="file" accept="image/*" class="hidden" onchange="uploadPrescriptionOCR(this)">
@@ -324,15 +454,20 @@
                 </div>
 
                 <div id="chat-input-area" class="p-4 bg-white border-t border-slate-100">
-                    <form id="chat-form" onsubmit="handleChatSubmit(event)" class="flex items-center gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200">
-                        <input type="text" id="chat-input" placeholder="Type symptoms or tap body region..." autocomplete="off" required class="flex-1 bg-transparent px-4 py-2 text-sm text-slate-800 focus:outline-none">
-                        <button type="submit" class="orange-card text-white p-3 rounded-xl"><i data-lucide="send" class="w-4 h-4"></i></button>
+                    <form id="chat-form" onsubmit="handleChatSubmit(event)"
+                        class="flex items-center gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200">
+                        <input type="text" id="chat-input" placeholder="Type symptoms or tap body region..."
+                            autocomplete="off" required
+                            class="flex-1 bg-transparent px-4 py-2 text-sm text-slate-800 focus:outline-none">
+                        <button type="submit" class="orange-card text-white p-3 rounded-xl"><i data-lucide="send"
+                                class="w-4 h-4"></i></button>
                     </form>
                 </div>
             </div>
 
             <!-- INTERACTIVE BODY SILHOUETTE -->
-            <div id="side-body-panel" class="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex flex-col items-center justify-between space-y-4 shadow-xl">
+            <div id="side-body-panel"
+                class="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex flex-col items-center justify-between space-y-4 shadow-xl">
                 <div class="text-center">
                     <h3 class="text-sm font-black">Interactive Body Silhouette</h3>
                     <p class="text-[11px] text-slate-400">Tap affected area to select pain site</p>
@@ -340,13 +475,20 @@
 
                 <div class="relative w-40 h-80 flex justify-center items-center">
                     <svg viewBox="0 0 100 200" class="w-full h-full">
-                        <circle id="part-head" onclick="highlightPart('Head', this)" class="body-part" cx="50" cy="20" r="14" />
-                        <path id="part-chest" onclick="highlightPart('Chest', this)" class="body-part" d="M32,38 L68,38 L65,75 L35,75 Z" />
-                        <path id="part-abdomen" onclick="highlightPart('Abdomen', this)" class="body-part" d="M35,77 L65,77 L60,115 L40,115 Z" />
-                        <rect id="part-arm-left" onclick="highlightPart('Limbs', this)" class="body-part" x="16" y="38" width="12" height="70" rx="6" />
-                        <rect id="part-arm-right" onclick="highlightPart('Limbs', this)" class="body-part" x="72" y="38" width="12" height="70" rx="6" />
-                        <rect id="part-leg-left" onclick="highlightPart('Limbs', this)" class="body-part" x="32" y="118" width="15" height="75" rx="7" />
-                        <rect id="part-leg-right" onclick="highlightPart('Limbs', this)" class="body-part" x="53" y="118" width="15" height="75" rx="7" />
+                        <circle id="part-head" onclick="highlightPart('Head', this)" class="body-part" cx="50" cy="20"
+                            r="14" />
+                        <path id="part-chest" onclick="highlightPart('Chest', this)" class="body-part"
+                            d="M32,38 L68,38 L65,75 L35,75 Z" />
+                        <path id="part-abdomen" onclick="highlightPart('Abdomen', this)" class="body-part"
+                            d="M35,77 L65,77 L60,115 L40,115 Z" />
+                        <rect id="part-arm-left" onclick="highlightPart('Limbs', this)" class="body-part" x="16" y="38"
+                            width="12" height="70" rx="6" />
+                        <rect id="part-arm-right" onclick="highlightPart('Limbs', this)" class="body-part" x="72" y="38"
+                            width="12" height="70" rx="6" />
+                        <rect id="part-leg-left" onclick="highlightPart('Limbs', this)" class="body-part" x="32" y="118"
+                            width="15" height="75" rx="7" />
+                        <rect id="part-leg-right" onclick="highlightPart('Limbs', this)" class="body-part" x="53"
+                            y="118" width="15" height="75" rx="7" />
                     </svg>
                 </div>
 
@@ -458,15 +600,15 @@
 
             const voices = window.speechSynthesis.getVoices();
             if (voices.length > 0) {
-                let femaleVoice = voices.find(v => 
-                    v.lang.includes(containsHindiText ? "hi" : "en") && 
-                    (v.name.toLowerCase().includes("female") || 
-                     v.name.toLowerCase().includes("google") || 
-                     v.name.toLowerCase().includes("zira") || 
-                     v.name.toLowerCase().includes("swara") || 
-                     v.name.toLowerCase().includes("heera") || 
-                     v.name.toLowerCase().includes("ananya") ||
-                     v.name.toLowerCase().includes("natural"))
+                let femaleVoice = voices.find(v =>
+                    v.lang.includes(containsHindiText ? "hi" : "en") &&
+                    (v.name.toLowerCase().includes("female") ||
+                        v.name.toLowerCase().includes("google") ||
+                        v.name.toLowerCase().includes("zira") ||
+                        v.name.toLowerCase().includes("swara") ||
+                        v.name.toLowerCase().includes("heera") ||
+                        v.name.toLowerCase().includes("ananya") ||
+                        v.name.toLowerCase().includes("natural"))
                 );
 
                 if (!femaleVoice) {
@@ -555,7 +697,7 @@
 
         function appendQuickOptions(optionsArray) {
             const chatBox = document.getElementById("chat-box");
-            let buttonsHtml = optionsArray.map(opt => 
+            let buttonsHtml = optionsArray.map(opt =>
                 `<button type="button" onclick="selectQuickPoll('${opt}')" class="poll-btn bg-orange-50 border border-orange-200 text-orange-700 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-orange-600 hover:text-white transition">${opt}</button>`
             ).join(" ");
 
@@ -797,5 +939,72 @@
             window.addEventListener("touchstart", enableAudioContext, { once: true });
         });
     </script>
+    <!-- index.html ke script section mein handleChatSubmit ko update karein -->
+    <script>
+        async function handleChatSubmit(e) {
+            if (e) e.preventDefault();
+            const input = document.getElementById("chat-input");
+            const userMsg = input.value.trim();
+            if (!userMsg) return;
+
+            autoDetectBodyPart(userMsg);
+
+            const chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML += `
+            <div class="flex items-start justify-end space-x-3">
+                <div class="bubble-user text-white p-4 rounded-2xl text-xs max-w-md">${userMsg}</div>
+            </div>
+        `;
+            chatMemory.push({ sender: "user", text: userMsg });
+            input.value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const res = await fetch(`${BASE_API_URL}/api/chat/ai-assistant`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_message: userMsg,
+                        chat_history: chatMemory,
+                        language: currentLang,
+                        patient_details: patientDetails,
+                        pain_site: selectedPainSite
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const aiReply = data.reply;
+                    chatMemory.push({ sender: "assistant", text: aiReply });
+
+                    chatBox.innerHTML += `
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 rounded-xl orange-card flex items-center justify-center text-white text-xs font-black flex-shrink-0">AI</div>
+                        <div class="bubble-ai p-4 rounded-2xl rounded-tl-none text-xs text-slate-700 max-w-md">${aiReply}</div>
+                    </div>
+                `;
+
+                    if (data.poll_options && data.poll_options.length > 0) {
+                        appendQuickOptions(data.poll_options);
+                    }
+
+                    speakText(aiReply);
+
+                    if (data.is_red_flag) {
+                        document.getElementById('red-flag-banner').classList.remove('hidden');
+                    }
+
+                    if (data.is_completed && data.token) {
+                        triggerTokenFlashModal(`#${data.token}`);
+                    }
+                }
+            } catch (err) {
+                console.error("Chat Error:", err);
+            }
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
 </body>
+
 </html>
