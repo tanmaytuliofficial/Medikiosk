@@ -432,7 +432,7 @@ def determine_department(text: str, pain_site: Optional[str] = None):
     if any(k in text_lower for k in ["chest pain", "heart", "palpitation", "blood pressure"]): return "Cardiology"
     if any(k in text_lower for k in ["seizure", "migraine", "numbness", "dizziness"]): return "Neurology"
     if any(k in text_lower for k in ["fracture", "bone", "joint", "knee", "back pain"]): return "Orthopedics"
-    if any(k in text_lower for k in ["skin", "rash", "itching", "acne"]): return "Dermatology"
+    if any(k in text_lower for k in ["skin", "rash", "itching", "acne", "burn"]): return "Dermatology"
     if any(k in text_lower for k in ["ear", "nose", "throat", "hearing"]): return "ENT"
     return "General Medicine"
 
@@ -472,7 +472,7 @@ def health():
         return {"status": "error", "database": "failed", "error": str(e)}
 
 # ------------------------------------------------------------
-# AI CHAT ASSISTANT & PATIENT INTAKE
+# AI CHAT ASSISTANT & PATIENT INTAKE (GROQ HINGLISH INTEGRATION)
 # ------------------------------------------------------------
 
 @app.post("/api/chat/ai-assistant")
@@ -495,6 +495,35 @@ def chat_ai_assistant(req: ChatRequest):
     dept = determine_department(req.user_message, req.pain_site)
     doc_info = assign_doctor(dept)
 
+    reply_msg = ""
+    if groq_client:
+        try:
+            system_prompt = (
+                "You are an empathetic, clinical AI triage assistant at MediKiosk in an Indian hospital. "
+                "Respond in friendly Hinglish (mix of conversational Hindi written in Roman script and English) or English based on user query. "
+                "Acknowledge the patient's concern calmly, ask short relevant medical questions (duration, severity, accompanying symptoms). "
+                "Keep your answers concise under 2-3 short sentences. Be supportive and helpful."
+            )
+            
+            messages = [{"role": "system", "content": system_prompt}]
+            for msg in (req.chat_history or [])[-5:]:
+                role = "assistant" if msg.get("sender") == "assistant" else "user"
+                messages.append({"role": role, "content": msg.get("text", "")})
+            messages.append({"role": "user", "content": req.user_message})
+
+            completion = groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                temperature=0.6,
+                max_tokens=150
+            )
+            reply_msg = completion.choices[0].message.content.strip()
+        except Exception as e:
+            print("Groq Integration Exception:", e)
+
+    if not reply_msg:
+        reply_msg = f"Namaste {p_name}! Aapki dikkat ({req.pain_site or 'General'}) record kar li gayi hai. OPD Token #{next_token} generate ho gaya hai. Kripya waiting area me baithein."
+
     cursor.execute("""
         INSERT INTO patients (
             patient_id, patient_name, age, phone, gender, chief_complaint, symptoms, pain_site, department,
@@ -509,8 +538,6 @@ def chat_ai_assistant(req: ChatRequest):
 
     conn.commit()
     conn.close()
-
-    reply_msg = f"Thank you {p_name}. Your clinical intake details for ({req.pain_site or 'General'}) have been recorded. OPD Token #{next_token} generated. Please report to Waiting Area."
 
     asyncio.run(broadcast({"type": "NEW_PATIENT", "token": next_token, "name": p_name}))
 
