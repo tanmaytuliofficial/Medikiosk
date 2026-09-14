@@ -974,6 +974,59 @@
             window.addEventListener("click", enableAudioContext, { once: true });
             window.addEventListener("touchstart", enableAudioContext, { once: true });
         });
+
+
+        // Connect WebSocket to Render Backend
+const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+const socketUrl = `${wsProtocol}//medikiosk-backend-8rs2.onrender.com/ws/kiosk`;
+let kioskSocket = null;
+
+function initKioskWebSocket() {
+    kioskSocket = new WebSocket(socketUrl);
+
+    kioskSocket.onopen = () => {
+        console.log("Connected to MediKiosk Live WebSocket");
+    };
+
+    kioskSocket.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            console.log("WebSocket Event Received:", data);
+
+            // Check if an NFC card was tapped on the hardware
+            if (data.type === "NFC_TAP") {
+                if (data.status === "success" && data.patient) {
+                    speakText("Card verified successfully. Loading patient details.");
+                    handleNfcCardLoaded(data.patient, data.uid);
+                } else if (data.status === "not_registered") {
+                    speakText("New card detected. Please register patient.");
+                    handleNfcCardLoaded({
+                        patient_name: "New Patient (" + data.uid + ")",
+                        age: 25,
+                        phone: "",
+                        patient_id: "MK-" + Math.floor(Math.random() * 900 + 100),
+                        gender: "Male",
+                        nfc_uid: data.uid
+                    }, data.uid);
+                }
+            }
+        } catch (e) {
+            console.error("WS Parse Error:", e);
+        }
+    };
+
+    kioskSocket.onclose = () => {
+        console.log("WebSocket disconnected. Reconnecting in 3s...");
+        setTimeout(initKioskWebSocket, 3000);
+    };
+}
+
+// Call inside window load listener
+window.addEventListener("load", () => {
+    lucide.createIcons();
+    initKioskWebSocket(); // Start listening for hardware card taps
+    // ... existing load code ...
+});
     </script>
 </body>
 </html>

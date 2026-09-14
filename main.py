@@ -1329,6 +1329,61 @@ def patient_row_to_dict(row):
         "updated_at": safe_row_value(row, "updated_at"),
     }
 
+@app.post("/api/nfc/tap")
+async def nfc_tap(req: NFCTapRequest):
+    uid = (req.uid or "").strip().upper()
+    if not uid:
+        raise HTTPException(status_code=400, detail="NFC UID is required")
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            SELECT n.uid, n.patient_id, n.status, p.*
+            FROM nfc_tags n
+            LEFT JOIN patients p ON p.patient_id = n.patient_id
+            WHERE n.uid = ?
+            LIMIT 1
+        """, (uid,))
+        row = cursor.fetchone()
+
+        if not row or not row["patient_id"]:
+            # Broadcast un-registered tap to frontend
+            await broadcast({
+                "type": "NFC_TAP",
+                "status": "not_registered",
+                "uid": uid
+            })
+            return {
+                "status": "not_registered",
+                "uid": uid,
+                "message": "New NFC card detected."
+            }
+
+        cursor.execute("UPDATE nfc_tags SET last_used_at = ? WHERE uid = ?", (now(), uid))
+        conn.commit()
+
+        patient = patient_row_to_dict(row)
+        
+        # Broadcast successful tap to frontend
+        await broadcast({
+            "type": "NFC_TAP",
+            "status": "success",
+            "uid": uid,
+            "patient_id": row["patient_id"],
+            "patient": patient
+        })
+
+        return {
+            "status": "success",
+            "uid": uid,
+            "patient_id": row["patient_id"],
+            "patient": patient,
+            "message": f"Patient Verified: {patient['patient_name']}"
+        }
+    finally:
+        conn.close()
 # ============================================================
 # NFC TAP ENDPOINT (POST)
 # ============================================================
