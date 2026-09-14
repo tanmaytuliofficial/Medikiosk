@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
@@ -10,8 +11,90 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
     <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at top left, rgba(14, 116, 144, 0.08), transparent 35%),
+                radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.08), transparent 35%),
+                #f8fafc;
+        }
+
+        .teal-card {
+            background: linear-gradient(135deg, #0284c7 0%, #0d9488 100%);
+        }
+
+        .bubble-user {
+            background: linear-gradient(135deg, #0284c7 0%, #0d9488 100%);
+        }
+
+        .bubble-ai {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+        }
+
+        .body-part {
+            cursor: pointer;
+            transition: all 0.2s;
+            fill: #334155;
+            stroke: #64748b;
+            stroke-width: 1.5;
+        }
+
+        .body-part:hover {
+            fill: #0d9488;
+        }
+
+        .body-part.active {
+            fill: #ef4444 !important;
+            stroke: #b91c1c !important;
+        }
+
+        .poll-btn {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .poll-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(13, 148, 136, 0.2);
+        }
+
+        .nfc-ripple-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nfc-ripple {
+            position: absolute;
+            border: 2px solid rgba(13, 148, 136, 0.3);
+            border-radius: 50%;
+            animation: ripple-out 2.5s infinite cubic-bezier(0, 0.2, 0.8, 1);
+        }
+
+        .nfc-ripple:nth-child(2) {
+            animation-delay: -0.8s;
+        }
+
+        .nfc-ripple:nth-child(3) {
+            animation-delay: -1.6s;
+        }
+
+        @keyframes ripple-out {
+            0% {
+                width: 80px;
+                height: 80px;
+                opacity: 1;
+            }
+
+            100% {
+                width: 220px;
+                height: 220px;
+                opacity: 0;
+            }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background: radial-gradient(circle at top left, rgba(14, 116, 144, 0.08), transparent 35%),
@@ -98,6 +181,11 @@
             animation: emergencyPulse 1s infinite;
         }
 
+
+        .emergency-glow {
+            animation: emergencyPulse 1s infinite;
+        }
+
         @keyframes emergencyPulse {
             0% {
                 box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
@@ -110,7 +198,23 @@
             100% {
                 box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
             }
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
         }
+
+        .flash-bounce {
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
 
         .flash-bounce {
             animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -152,6 +256,8 @@
             }
         }
     </style>
+
+
 </head>
 
 <body class="text-slate-900 min-h-screen flex flex-col justify-between relative overflow-x-hidden"
@@ -160,7 +266,12 @@
     <!-- HEADER WITH LOGO -->
     <header id="main-header"
         class="bg-white/95 backdrop-blur-md border-b border-slate-200 px-8 py-3 flex justify-between items-center sticky top-0 z-50">
+    <!-- HEADER WITH LOGO -->
+    <header id="main-header"
+        class="bg-white/95 backdrop-blur-md border-b border-slate-200 px-8 py-3 flex justify-between items-center sticky top-0 z-50">
         <div class="flex items-center gap-3">
+            <button id="global-back-btn" onclick="goBack()"
+                class="hidden bg-slate-100 text-slate-700 hover:bg-teal-100 hover:text-teal-700 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1">
             <button id="global-back-btn" onclick="goBack()"
                 class="hidden bg-slate-100 text-slate-700 hover:bg-teal-100 hover:text-teal-700 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
@@ -173,7 +284,10 @@
         <div class="flex items-center gap-3">
             <button onclick="openAbhaModal()"
                 class="bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-100 transition flex items-center gap-2">
+            <button onclick="openAbhaModal()"
+                class="bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-100 transition flex items-center gap-2">
                 <i data-lucide="shield-check" class="w-4 h-4 text-blue-600"></i>
+                <span>ABHA Health Lock / ऑभा लॉक</span>
                 <span>ABHA Health Lock / ऑभा लॉक</span>
             </button>
             <button id="voice-guide-btn" onclick="toggleVoiceGuide()"
@@ -187,6 +301,8 @@
     <!-- EMERGENCY BANNER -->
     <div id="red-flag-banner"
         class="hidden bg-red-600 text-white px-6 py-4 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 emergency-glow">
+    <div id="red-flag-banner"
+        class="hidden bg-red-600 text-white px-6 py-4 mx-8 mt-4 rounded-2xl shadow-xl flex items-center justify-between z-50 emergency-glow">
         <div class="flex items-center space-x-4">
             <i data-lucide="siren" class="w-8 h-8"></i>
             <div>
@@ -195,7 +311,10 @@
                 </p>
             </div>
         </div>
-        <span class="bg-white text-red-600 font-black px-4 py-2 rounded-xl text-xs uppercase">PRIORITY TRIAGE</span>
+
+        <span class="bg-white text-red-600 font-black px-4 py-2 rounded-xl text-xs uppercase">
+            PRIORITY TRIAGE
+        </span>
     </div>
 
     <!-- OPD TOKEN COMPLETED FLASH MODAL -->
@@ -206,6 +325,7 @@
             <div class="w-20 h-20 teal-card text-white rounded-full flex items-center justify-center mx-auto shadow-xl">
                 <i data-lucide="check-circle-2" class="w-10 h-10"></i>
             </div>
+
             <div>
                 <span
                     class="bg-teal-100 text-teal-800 font-black px-4 py-1.5 rounded-full text-xs tracking-wider uppercase">Registration
@@ -219,11 +339,15 @@
                         class="text-teal-700 font-black">Waiting Area</span> / कृपया प्रतीक्षा क्षेत्र में जाएं।</p>
             </div>
 
+
             <div class="space-y-3">
+                <button onclick="closeTokenModalAndReset()"
+                    class="w-full teal-card text-white py-4 rounded-2xl font-black text-base shadow-lg hover:scale-105 transition flex items-center justify-center gap-2">
                 <button onclick="closeTokenModalAndReset()"
                     class="w-full teal-card text-white py-4 rounded-2xl font-black text-base shadow-lg hover:scale-105 transition flex items-center justify-center gap-2">
                     <span>Done & Return to Main Screen</span>
                 </button>
+
                 <div class="text-xs font-bold text-slate-400">
                     Next patient screen in <span id="reset-timer-count"
                         class="text-teal-700 font-black text-sm">30</span>s
@@ -290,6 +414,7 @@
         <div id="nfc-modal"
             class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 border border-slate-200 shadow-2xl">
+
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-base text-slate-800">Enter Card UID / कार्ड नंबर डालें</h3>
                     <button onclick="closeNfcManualModal()" class="text-slate-400 hover:text-slate-600"><i
@@ -309,6 +434,7 @@
         <div id="abha-modal"
             class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-3xl p-6 max-w-md w-full space-y-5 border border-slate-200 shadow-2xl">
+
                 <div class="flex justify-between items-center border-b border-slate-100 pb-3">
                     <div class="flex items-center gap-2">
                         <div
@@ -321,6 +447,7 @@
                     <button onclick="closeAbhaModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"
                             class="w-5 h-5"></i></button>
                 </div>
+
                 <div id="abha-step-1" class="space-y-4">
                     <input type="text" id="abha-input" value="14-9876-5432-1000"
                         class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none">
@@ -329,6 +456,7 @@
                         Fetch Profile & Send OTP / ओटीपी भेजें
                     </button>
                 </div>
+
                 <div id="abha-step-2" class="hidden space-y-4">
                     <p class="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200">Demo OTP:
                         <strong>123456</strong></p>
@@ -370,7 +498,11 @@
 
         <!-- PAGE 3: LANGUAGE SELECTION -->
         <section id="lang-page" class="hidden w-full text-center space-y-8 my-auto max-w-xl">
-            <h1 class="text-4xl font-black">Select Language / भाषा चुनें</h1>
+
+            <h1 class="text-4xl font-black">
+                Select Language / भाषा चुनें
+            </h1>
+
             <div class="grid grid-cols-2 gap-6">
                 <button type="button" onclick="selectLanguage('en')"
                     class="teal-card text-white p-8 rounded-3xl font-bold text-2xl shadow-lg hover:scale-105 transition">English</button>
@@ -403,14 +535,20 @@
             <button id="mic-btn" type="button" onclick="toggleMicRecording()"
                 class="w-32 h-32 teal-card text-white rounded-full flex flex-col items-center justify-center mx-auto shadow-xl transition hover:scale-105">
                 <i data-lucide="mic" class="w-12 h-12"></i>
-                <span id="mic-status" class="text-[10px] font-bold mt-1 uppercase">Tap Mic to Speak</span>
+
+                <span id="mic-status" class="text-[10px] font-bold mt-1 uppercase">
+                    Tap Mic to Speak
+                </span>
             </button>
+
             <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left space-y-3">
+
                 <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase">You Said:</span>
                     <p id="voice-user-text" class="text-slate-700 font-semibold italic text-sm">"Tap microphone and
                         speak..."</p>
                 </div>
+
                 <div class="border-t border-slate-200 pt-3">
                     <span class="text-[10px] font-bold text-teal-600 uppercase">Groq AI Assistant:</span>
                     <p id="voice-ai-text" class="text-teal-950 font-bold text-sm">"Waiting for your speech..."</p>
@@ -418,11 +556,12 @@
             </div>
         </section>
 
-        <!-- PAGE 6: CHAT CONSULTATION & BODY SILHOUETTE -->
+        <!-- PAGE 6: CHAT CONSULTATION -->
         <section id="chat-page" class="hidden w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div id="chat-container"
                 class="lg:col-span-2 bg-white border border-slate-200 rounded-3xl shadow-xl flex flex-col h-[650px] overflow-hidden">
                 <div class="bg-slate-900 text-white p-4 px-6 flex justify-between items-center">
+
                     <div class="flex items-center space-x-3">
                         <div>
                             <h3 class="font-bold text-sm">MediKiosk Assistant</h3>
@@ -439,14 +578,19 @@
                     </div>
                 </div>
 
-                <div id="chat-box" class="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50"></div>
+                <div id="chat-box" class="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50">
+                </div>
 
                 <div class="px-4 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
                     <span class="font-bold text-slate-500">Have Previous Prescription/Report?</span>
                     <label
                         class="cursor-pointer bg-slate-200 hover:bg-slate-300 text-slate-800 px-3 py-1 rounded-lg font-bold flex items-center gap-1 transition">
                         <i data-lucide="paperclip" class="w-3.5 h-3.5"></i>
-                        <span>Upload Prescription (OCR)</span>
+
+                        <span>
+                            Upload Prescription (OCR)
+                        </span>
+
                         <input type="file" accept="image/*" class="hidden" onchange="uploadPrescriptionOCR(this)">
                     </label>
                 </div>
@@ -467,11 +611,17 @@
             <div id="side-body-panel"
                 class="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex flex-col items-center justify-between space-y-4 shadow-xl">
                 <div class="text-center">
-                    <h3 class="text-sm font-black">Interactive Body Silhouette</h3>
-                    <p class="text-[11px] text-slate-400">Tap affected area to select pain site</p>
+                    <h3 class="text-sm font-black">
+                        Interactive Body Silhouette
+                    </h3>
+
+                    <p class="text-[11px] text-slate-400">
+                        Tap affected area to select pain site
+                    </p>
                 </div>
 
                 <div class="relative w-40 h-80 flex justify-center items-center">
+
                     <svg viewBox="0 0 100 200" class="w-full h-full">
                         <circle id="part-head" onclick="highlightPart('Head', this)" class="body-part" cx="50" cy="20"
                             r="14" />
@@ -500,19 +650,36 @@
     </main>
 
     <script>
+        // ============================================================
+        // CONFIG
+        // ============================================================
+
         const BASE_API_URL = "https://medikiosk-backend-8rs2.onrender.com";
+
+        // ============================================================
+        // GLOBAL STATE
+        // ============================================================
 
         let pageHistory = ["nfc-page"];
         let currentLang = "bilingual"; // Bilingual until chosen
         let chatMemory = [];
+
         let patientDetails = {};
+
         let selectedPainSite = "General";
+
         let voiceGuideEnabled = true;
+
         let triageStep = 0;
-        let generatedToken = "#101";
+
+        let generatedToken = null;
+
         let countdownTimer = null;
+
         let timeLeft = 30;
+
         let recognition = null;
+
         let isRecording = false;
         let hasInteracted = false;
 
@@ -529,29 +696,57 @@
         }
 
         function navigateTo(targetPageId) {
-            const currentPage = pageHistory[pageHistory.length - 1];
+
+            const currentPage =
+                pageHistory[pageHistory.length - 1];
+
             if (currentPage !== targetPageId) {
-                document.getElementById(currentPage).classList.add("hidden");
-                document.getElementById(targetPageId).classList.remove("hidden");
+
+                document
+                    .getElementById(currentPage)
+                    .classList.add("hidden");
+
+                document
+                    .getElementById(targetPageId)
+                    .classList.remove("hidden");
+
                 pageHistory.push(targetPageId);
             }
+
             updateBackButtonVisibility();
+
             triggerPageVoiceGuide(targetPageId);
         }
 
         function goBack() {
+
             if (pageHistory.length > 1) {
-                const currentPage = pageHistory.pop();
-                const previousPage = pageHistory[pageHistory.length - 1];
-                document.getElementById(currentPage).classList.add("hidden");
-                document.getElementById(previousPage).classList.remove("hidden");
+
+                const currentPage =
+                    pageHistory.pop();
+
+                const previousPage =
+                    pageHistory[pageHistory.length - 1];
+
+                document
+                    .getElementById(currentPage)
+                    .classList.add("hidden");
+
+                document
+                    .getElementById(previousPage)
+                    .classList.remove("hidden");
+
                 updateBackButtonVisibility();
+
                 triggerPageVoiceGuide(previousPage);
             }
         }
 
         function updateBackButtonVisibility() {
-            const backBtn = document.getElementById("global-back-btn");
+
+            const backBtn =
+                document.getElementById("global-back-btn");
+
             if (pageHistory.length > 1) {
                 backBtn.classList.remove("hidden");
             } else {
@@ -561,6 +756,7 @@
 
         // BILINGUAL VOICE ANNOUNCEMENTS BEFORE LANGUAGE SELECTION
         function triggerPageVoiceGuide(pageId) {
+
             if (pageId === "nfc-page") {
                 speakText("Welcome to the hospital. Kripya apna health card tap karein.");
             } else if (pageId === "patient-details-page") {
@@ -580,14 +776,39 @@
         function closeNfcManualModal() { document.getElementById('nfc-modal').classList.add('hidden'); }
 
         function toggleVoiceGuide() {
-            voiceGuideEnabled = !voiceGuideEnabled;
-            const text = document.getElementById("speaker-text");
-            if (text) text.innerText = voiceGuideEnabled ? "Voice Guide: ON" : "Voice Guide: OFF";
-            if (!voiceGuideEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
+
+            voiceGuideEnabled =
+                !voiceGuideEnabled;
+
+            const text =
+                document.getElementById("speaker-text");
+
+            if (text) {
+
+                text.innerText =
+                    voiceGuideEnabled
+                        ? "Voice Guide: ON"
+                        : "Voice Guide: OFF";
+            }
+
+            if (
+                !voiceGuideEnabled &&
+                window.speechSynthesis
+            ) {
+
+                window.speechSynthesis.cancel();
+            }
         }
 
         function speakText(text) {
-            if (!voiceGuideEnabled || !("speechSynthesis" in window)) return;
+
+            if (
+                !voiceGuideEnabled ||
+                !("speechSynthesis" in window)
+            ) {
+                return;
+            }
+
             window.speechSynthesis.cancel();
 
             const utterance = new SpeechSynthesisUtterance(text);
@@ -620,36 +841,143 @@
             window.speechSynthesis.speak(utterance);
         }
 
+        // ============================================================
+        // MODALS
+        // ============================================================
+
+        function openAbhaModal() {
+
+            document
+                .getElementById("abha-modal")
+                .classList.remove("hidden");
+        }
+
+        function closeAbhaModal() {
+
+            document
+                .getElementById("abha-modal")
+                .classList.add("hidden");
+        }
+
+        function openNfcManualModal() {
+
+            document
+                .getElementById("nfc-modal")
+                .classList.remove("hidden");
+        }
+
+        function closeNfcManualModal() {
+
+            document
+                .getElementById("nfc-modal")
+                .classList.add("hidden");
+        }
+
+        // ============================================================
+        // NFC / ABHA
+        // ============================================================
+
         function submitManualNfc() {
-            const val = document.getElementById('manual-nfc-input').value.trim();
+
+            const val =
+                document
+                    .getElementById("manual-nfc-input")
+                    .value
+                    .trim();
+
+            if (!val) {
+                return;
+            }
+
             closeNfcManualModal();
-            handleNfcCardLoaded({ patient_name: "Ramesh Kumar", age: 45, phone: "9876543210", patient_id: val, gender: "Male" }, val);
+
+            isNfcMode = true;
+
+            handleNfcCardLoaded(
+                {
+                    patient_name: "Ramesh Kumar",
+                    age: 45,
+                    phone: "9876543210",
+                    patient_id: val,
+                    gender: "Male"
+                },
+                val
+            );
         }
 
         function requestAbhaOtp() {
-            document.getElementById('abha-step-1').classList.add('hidden');
-            document.getElementById('abha-step-2').classList.remove('hidden');
+
+            document
+                .getElementById("abha-step-1")
+                .classList.add("hidden");
+
+            document
+                .getElementById("abha-step-2")
+                .classList.remove("hidden");
         }
 
         function verifyAbhaOtp() {
+
             closeAbhaModal();
-            handleNfcCardLoaded({ patient_name: "Ramesh Kumar (ABHA)", age: 45, gender: "Male", phone: "9876543210", patient_id: "ABHA-14-9876-5432" }, "ABHA-14-9876-5432");
+
+            isNfcMode = true;
+
+            handleNfcCardLoaded(
+                {
+                    patient_name: "Ramesh Kumar (ABHA)",
+                    age: 45,
+                    gender: "Male",
+                    phone: "9876543210",
+                    patient_id: "ABHA-14-9876-5432"
+                },
+                "ABHA-14-9876-5432"
+            );
         }
 
-        function handleNfcCardLoaded(details, cardUid) {
-            patientDetails = details || {};
-            document.getElementById("nfc-patient-name").innerText = details?.patient_name || "--";
-            document.getElementById("nfc-patient-age").innerText = `${details?.age || '--'} yrs • ${details?.gender || 'Male'}`;
-            document.getElementById("nfc-patient-phone").innerText = details?.phone || "--";
-            document.getElementById("nfc-patient-id").innerText = details?.patient_id || "--";
-            navigateTo("patient-details-page");
+        function handleNfcCardLoaded(
+            details,
+            cardUid
+        ) {
+
+            patientDetails =
+                details || {};
+
+            document
+                .getElementById("nfc-patient-name")
+                .innerText =
+                details?.patient_name || "--";
+
+            document
+                .getElementById("nfc-patient-age")
+                .innerText =
+                `${details?.age || "--"} yrs • ${details?.gender || "Male"}`;
+
+            document
+                .getElementById("nfc-patient-phone")
+                .innerText =
+                details?.phone || "--";
+
+            document
+                .getElementById("nfc-patient-id")
+                .innerText =
+                details?.patient_id || "--";
+
+            navigateTo(
+                "patient-details-page"
+            );
         }
 
         function continueFromPatientDetails() {
+
             navigateTo("lang-page");
         }
 
+        // ============================================================
+        // LANGUAGE
+        // ============================================================
+
         function selectLanguage(lang) {
+
             currentLang = lang;
             if (lang === "hi") {
                 document.getElementById("btn-text-consult").innerText = "टेक्स्ट परामर्श (Chat)";
@@ -661,7 +989,12 @@
             navigateTo("landing-page");
         }
 
+        // ============================================================
+        // CHAT MODE
+        // ============================================================
+
         function openChatMode() {
+
             navigateTo("chat-page");
             const chatBox = document.getElementById("chat-box");
             const welcomeText = currentLang === "hi"
@@ -681,9 +1014,18 @@
         }
 
         function openVoiceMode() {
+
             navigateTo("voice-page");
+
+            // Reset conversation when entering voice consultation
+            chatMemory = [];
+
             initSpeechRecognition();
         }
+
+        // ============================================================
+        // BODY DETECTION
+        // ============================================================
 
         function autoDetectBodyPart(text) {
             const lower = text.toLowerCase();
@@ -698,12 +1040,33 @@
             }
         }
 
-        function highlightPart(siteName, element) {
-            document.querySelectorAll(".body-part").forEach(el => el.classList.remove("active"));
-            if (element) element.classList.add("active");
-            selectedPainSite = siteName;
-            document.getElementById("selected-site-tag").innerText = siteName;
+        function highlightPart(
+            siteName,
+            element
+        ) {
+
+            document
+                .querySelectorAll(".body-part")
+                .forEach(el =>
+                    el.classList.remove("active")
+                );
+
+            if (element) {
+                element.classList.add("active");
+            }
+
+            selectedPainSite =
+                siteName;
+
+            document
+                .getElementById("selected-site-tag")
+                .innerText =
+                siteName;
         }
+
+        // ============================================================
+        // QUICK POLL
+        // ============================================================
 
         function appendQuickOptions(optionsArray) {
             const chatBox = document.getElementById("chat-box");
@@ -712,33 +1075,99 @@
             ).join(" ");
 
             chatBox.innerHTML += `
-                <div class="flex items-center gap-2 pl-11 my-2 flex-wrap">
-                    ${buttonsHtml}
-                </div>
-            `;
-            chatBox.scrollTop = chatBox.scrollHeight;
+            <div class="flex items-center gap-2 pl-11 my-2 flex-wrap">
+                ${buttonsHtml}
+            </div>
+        `;
+
+            chatBox.scrollTop =
+                chatBox.scrollHeight;
         }
 
         function selectQuickPoll(val) {
-            document.getElementById("chat-input").value = val;
+
+            const input =
+                document.getElementById("chat-input");
+
+            input.value = val;
+
             handleChatSubmit(null);
         }
 
+        // ============================================================
+        // API ERROR DISPLAY
+        // ============================================================
+
+        function showChatError(message) {
+
+            const chatBox =
+                document.getElementById("chat-box");
+
+            chatBox.innerHTML += `
+            <div class="flex items-start space-x-3">
+                <div class="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-xs font-black flex-shrink-0">
+                    !
+                </div>
+
+                <div class="api-error p-4 rounded-2xl rounded-tl-none text-xs max-w-md">
+                    <strong>Connection Error</strong><br>
+                    ${message}
+                </div>
+            </div>
+        `;
+
+            chatBox.scrollTop =
+                chatBox.scrollHeight;
+        }
+
+        // ============================================================
+        // TEXT CHAT SUBMIT
+        // ============================================================
+
         async function handleChatSubmit(e) {
-            if (e) e.preventDefault();
-            const input = document.getElementById("chat-input");
-            const userMsg = input.value.trim();
-            if (!userMsg) return;
+
+            if (e) {
+                e.preventDefault();
+            }
+
+            const input =
+                document.getElementById("chat-input");
+
+            const userMsg =
+                input.value.trim();
+
+            if (!userMsg) {
+                return;
+            }
 
             autoDetectBodyPart(userMsg);
 
-            const chatBox = document.getElementById("chat-box");
+            const chatBox =
+                document.getElementById("chat-box");
+
+            // --------------------------------------------------------
+            // SHOW USER MESSAGE
+            // --------------------------------------------------------
+
             chatBox.innerHTML += `
-                <div class="flex items-start justify-end space-x-3">
-                    <div class="bubble-user text-white p-4 rounded-2xl text-xs max-w-md">${userMsg}</div>
+            <div class="flex items-start justify-end space-x-3">
+                <div class="bubble-user text-white p-4 rounded-2xl text-xs max-w-md">
+                    ${userMsg}
                 </div>
-            `;
-            chatMemory.push({ sender: "user", text: userMsg });
+            </div>
+        `;
+
+            // --------------------------------------------------------
+            // IMPORTANT:
+            // Add current user message BEFORE sending.
+            // Backend counts user messages from chat_history.
+            // --------------------------------------------------------
+
+            chatMemory.push({
+                sender: "user",
+                text: userMsg
+            });
+
             input.value = "";
             chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -785,58 +1214,184 @@
                 console.error("Chat error:", err);
             }
 
-            chatBox.scrollTop = chatBox.scrollHeight;
+                // ----------------------------------------------------
+                // TOKEN GENERATION
+                // ----------------------------------------------------
+
+                if (
+                    data.is_completed === true &&
+                    data.token !== undefined &&
+                    data.token !== null &&
+                    data.token !== ""
+                ) {
+
+                    console.log(
+                        "TOKEN GENERATED:",
+                        data.token
+                    );
+
+                    generatedToken =
+                        `#${data.token}`;
+
+                    triggerTokenFlashModal(
+                        generatedToken
+                    );
+
+                    // Stop further processing
+                    return;
+                }
+
+            } catch (err) {
+
+                console.error(
+                    "CHAT API ERROR:",
+                    err
+                );
+
+                showChatError(
+                    err.message ||
+                    "Unable to connect to MediKiosk server."
+                );
+            }
+
+            chatBox.scrollTop =
+                chatBox.scrollHeight;
         }
 
         function initSpeechRecognition() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            const SpeechRecognition =
+                window.SpeechRecognition ||
+                window.webkitSpeechRecognition;
+
             if (!SpeechRecognition) {
                 alert("Speech recognition is not supported in this browser.");
                 return;
             }
 
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = currentLang === "hi" ? "hi-IN" : "en-US";
+            recognition =
+                new SpeechRecognition();
 
-            recognition.onstart = () => {
-                isRecording = true;
-                document.getElementById("mic-status").innerText = "Listening...";
-            };
+            recognition.continuous =
+                false;
 
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                document.getElementById("voice-user-text").innerText = `"${transcript}"`;
-                sendVoiceMessageToGroq(transcript);
-            };
+            recognition.interimResults =
+                false;
 
-            recognition.onerror = () => {
-                isRecording = false;
-                document.getElementById("mic-status").innerText = "Tap Mic to Speak";
-            };
+            recognition.lang =
+                currentLang === "hi"
+                    ? "hi-IN"
+                    : "en-US";
 
-            recognition.onend = () => {
-                isRecording = false;
-                document.getElementById("mic-status").innerText = "Tap Mic to Speak";
-            };
+            recognition.onstart =
+                () => {
+
+                    isRecording =
+                        true;
+
+                    document
+                        .getElementById("mic-status")
+                        .innerText =
+                        "Listening...";
+                };
+
+            recognition.onresult =
+                (event) => {
+
+                    const transcript =
+                        event.results[0][0]
+                            .transcript;
+
+                    document
+                        .getElementById("voice-user-text")
+                        .innerText =
+                        `"${transcript}"`;
+
+                    sendVoiceMessageToGroq(
+                        transcript
+                    );
+                };
+
+            recognition.onerror =
+                (event) => {
+
+                    console.error(
+                        "Speech Recognition Error:",
+                        event
+                    );
+
+                    isRecording =
+                        false;
+
+                    document
+                        .getElementById("mic-status")
+                        .innerText =
+                        "Tap Mic to Speak";
+                };
+
+            recognition.onend =
+                () => {
+
+                    isRecording =
+                        false;
+
+                    document
+                        .getElementById("mic-status")
+                        .innerText =
+                        "Tap Mic to Speak";
+                };
         }
 
         function toggleMicRecording() {
-            if (!recognition) initSpeechRecognition();
-            if (!recognition) return;
+
+            if (!recognition) {
+                initSpeechRecognition();
+            }
+
+            if (!recognition) {
+                return;
+            }
 
             if (isRecording) {
                 recognition.stop();
             } else {
-                recognition.start();
+
+                try {
+                    recognition.start();
+                } catch (error) {
+
+                    console.error(
+                        "Mic start error:",
+                        error
+                    );
+                }
             }
         }
 
-        async function sendVoiceMessageToGroq(userMsg) {
-            document.getElementById("voice-ai-text").innerText = "Groq AI Thinking...";
+        // ============================================================
+        // VOICE API
+        // ============================================================
+
+        async function sendVoiceMessageToGroq(
+            userMsg
+        ) {
+
+            document
+                .getElementById("voice-ai-text")
+                .innerText =
+                "Groq AI Thinking...";
+
             autoDetectBodyPart(userMsg);
-            chatMemory.push({ sender: "user", text: userMsg });
+
+            // --------------------------------------------------------
+            // IMPORTANT:
+            // Add current voice message before API request.
+            // --------------------------------------------------------
+
+            chatMemory.push({
+                sender: "user",
+                text: userMsg
+            });
 
             try {
                 const res = await fetch(`${BASE_API_URL}/api/chat/ai-assistant`, {
@@ -855,12 +1410,50 @@
                 const aiReply = data.reply || "Aapki response record kar li gayi hai.";
                 chatMemory.push({ sender: "assistant", text: aiReply });
 
-                document.getElementById("voice-ai-text").innerText = `"${aiReply}"`;
+                document
+                    .getElementById("voice-ai-text")
+                    .innerText =
+                    `"${aiReply}"`;
+
                 speakText(aiReply);
 
+                // ----------------------------------------------------
+                // RED FLAG
+                // ----------------------------------------------------
+
                 if (data.is_red_flag) {
-                    document.getElementById('red-flag-banner').classList.remove('hidden');
+
+                    document
+                        .getElementById("red-flag-banner")
+                        .classList.remove("hidden");
                 }
+
+                // ----------------------------------------------------
+                // TOKEN GENERATION
+                // ----------------------------------------------------
+
+                if (
+                    data.is_completed === true &&
+                    data.token !== undefined &&
+                    data.token !== null &&
+                    data.token !== ""
+                ) {
+
+                    console.log(
+                        "VOICE TOKEN GENERATED:",
+                        data.token
+                    );
+
+                    generatedToken =
+                        `#${data.token}`;
+
+                    triggerTokenFlashModal(
+                        generatedToken
+                    );
+
+                    return;
+                }
+
             } catch (err) {
                 console.error("Voice Error:", err);
             }
@@ -872,41 +1465,119 @@
             speakText(`OPD Token ${tokenId} generate ho gaya hai. Waiting area me baithein.`);
 
             timeLeft = 30;
-            document.getElementById("reset-timer-count").innerText = timeLeft;
-            if (countdownTimer) clearInterval(countdownTimer);
 
-            countdownTimer = setInterval(() => {
-                timeLeft--;
-                document.getElementById("reset-timer-count").innerText = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(countdownTimer);
-                    closeTokenModalAndReset();
-                }
-            }, 1000);
+            const timerElement =
+                document.getElementById(
+                    "reset-timer-count"
+                );
+
+            if (timerElement) {
+                timerElement.innerText =
+                    timeLeft;
+            }
+
+            if (countdownTimer) {
+                clearInterval(
+                    countdownTimer
+                );
+            }
+
+            countdownTimer =
+                setInterval(
+                    () => {
+
+                        timeLeft--;
+
+                        if (timerElement) {
+                            timerElement.innerText =
+                                timeLeft;
+                        }
+
+                        if (timeLeft <= 0) {
+
+                            clearInterval(
+                                countdownTimer
+                            );
+
+                            countdownTimer =
+                                null;
+
+                            closeTokenModalAndReset();
+                        }
+
+                    },
+                    1000
+                );
         }
 
         function closeTokenModalAndReset() {
-            if (countdownTimer) clearInterval(countdownTimer);
-            document.getElementById("token-flash-modal").classList.add("hidden");
+
+            if (countdownTimer) {
+
+                clearInterval(
+                    countdownTimer
+                );
+
+                countdownTimer =
+                    null;
+            }
+
+            const modal =
+                document.getElementById(
+                    "token-flash-modal"
+                );
+
+            if (modal) {
+                modal.classList.add(
+                    "hidden"
+                );
+            }
+
+            // Reset kiosk for next patient
             location.reload();
         }
 
-        function uploadPrescriptionOCR(input) {
-            if (input.files && input.files[0]) {
-                const chatBox = document.getElementById("chat-box");
+        // ============================================================
+        // PRESCRIPTION OCR PLACEHOLDER
+        // ============================================================
+
+        function uploadPrescriptionOCR(
+            input
+        ) {
+
+            if (
+                input.files &&
+                input.files[0]
+            ) {
+
+                const chatBox =
+                    document.getElementById(
+                        "chat-box"
+                    );
+
                 chatBox.innerHTML += `
-                    <div class="flex items-start justify-end space-x-3">
-                        <div class="bubble-user text-white p-3 rounded-2xl text-xs max-w-md flex items-center gap-2">
-                            <i data-lucide="file-check-2" class="w-4 h-4"></i>
-                            <span>Prescription Document Uploaded (${input.files[0].name})</span>
-                        </div>
+                <div class="flex items-start justify-end space-x-3">
+                    <div class="bubble-user text-white p-3 rounded-2xl text-xs max-w-md flex items-center gap-2">
+                        <i data-lucide="file-check-2" class="w-4 h-4"></i>
+                        <span>
+                            Prescription Document Uploaded
+                            (${input.files[0].name})
+                        </span>
                     </div>
-                `;
-                chatBox.scrollTop = chatBox.scrollHeight;
+                </div>
+            `;
+
+                chatBox.scrollTop =
+                    chatBox.scrollHeight;
+
                 lucide.createIcons();
                 speakText("Prescription report upload ho gayi hai.");
             }
         }
+
+        // ============================================================
+        // PAGE LOAD
+        // ============================================================
 
         window.addEventListener("load", () => {
             lucide.createIcons();
@@ -920,5 +1591,6 @@
         });
     </script>
 </body>
+
 
 </html>

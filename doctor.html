@@ -7,7 +7,8 @@
     <title>MediKiosk - Clinical Doctor Console</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
     <style>
         * {
@@ -17,8 +18,8 @@
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background: radial-gradient(circle at top left, rgba(14, 165, 233, .10), transparent 30%),
-                        radial-gradient(circle at bottom right, rgba(249, 115, 22, .08), transparent 30%),
-                        #f8fafc;
+                radial-gradient(circle at bottom right, rgba(249, 115, 22, .08), transparent 30%),
+                #f8fafc;
             color: #0f172a;
         }
 
@@ -53,9 +54,12 @@
         }
 
         @keyframes emergencyGlow {
-            0%, 100% {
+
+            0%,
+            100% {
                 box-shadow: 0 0 0 rgba(239, 68, 68, 0);
             }
+
             50% {
                 box-shadow: 0 0 20px rgba(239, 68, 68, .30);
             }
@@ -66,9 +70,12 @@
         }
 
         @keyframes pulseDot {
-            0%, 100% {
+
+            0%,
+            100% {
                 opacity: 1;
             }
+
             50% {
                 opacity: .35;
             }
@@ -83,6 +90,7 @@
                 opacity: 0;
                 transform: translateY(5px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -128,9 +136,12 @@
         }
 
         @keyframes micPulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: scale(1);
             }
+
             50% {
                 transform: scale(1.08);
             }
@@ -144,7 +155,8 @@
     <section id="login-screen" class="min-h-screen flex items-center justify-center p-6">
         <div class="w-full max-w-md glass rounded-3xl shadow-xl p-8">
             <div class="text-center mb-8">
-                <div class="mx-auto w-16 h-16 rounded-2xl bg-orange-500 text-white flex items-center justify-center mb-4">
+                <div
+                    class="mx-auto w-16 h-16 rounded-2xl bg-orange-500 text-white flex items-center justify-center mb-4">
                     <i data-lucide="stethoscope" class="w-8 h-8"></i>
                 </div>
                 <h1 class="text-2xl font-extrabold">MediKiosk</h1>
@@ -153,23 +165,30 @@
 
             <form id="login-form" onsubmit="loginUser(event)">
                 <label class="block text-sm font-semibold mb-2">Login As</label>
-                <select id="login-role" class="w-full border border-slate-200 rounded-xl px-4 py-3 mb-5 outline-none focus:ring-2 focus:ring-orange-400">
+                <select id="login-role"
+                    class="w-full border border-slate-200 rounded-xl px-4 py-3 mb-5 outline-none focus:ring-2 focus:ring-orange-400">
                     <option value="doctor">Doctor</option>
                     <option value="admin">Admin</option>
                 </select>
 
                 <label class="block text-sm font-semibold mb-2">ID</label>
-                <input id="login-id" required class="w-full border border-slate-200 rounded-xl px-4 py-3 mb-5 outline-none focus:ring-2 focus:ring-orange-400" placeholder="Enter ID">
+                <input id="login-id" required
+                    class="w-full border border-slate-200 rounded-xl px-4 py-3 mb-5 outline-none focus:ring-2 focus:ring-orange-400"
+                    placeholder="Enter ID">
 
                 <label class="block text-sm font-semibold mb-2">Password</label>
-                <input id="login-password" type="password" required class="w-full border border-slate-200 rounded-xl px-4 py-3 mb-6 outline-none focus:ring-2 focus:ring-orange-400" placeholder="Enter password">
+                <input id="login-password" type="password" required
+                    class="w-full border border-slate-200 rounded-xl px-4 py-3 mb-6 outline-none focus:ring-2 focus:ring-orange-400"
+                    placeholder="Enter password">
 
-                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition">
+                <button type="submit"
+                    class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition">
                     Login
                 </button>
             </form>
 
-            <div id="login-error" class="hidden mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3"></div>
+            <div id="login-error"
+                class="hidden mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3"></div>
 
             <div class="mt-6 text-xs text-slate-400 text-center">
                 Demo Admin: <b>admin</b> / <b>admin123</b>
@@ -186,10 +205,12 @@
                     <p class="text-sm text-slate-500">Hospital Administration</p>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="downloadAdminData()" class="px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold">
+                    <button onclick="downloadAdminData()"
+                        class="px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold">
                         <i data-lucide="download" class="w-4 h-4 inline"></i> Download Data
                     </button>
-                    <button onclick="logout()" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">
+                    <button onclick="logout()"
+                        class="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">
                         Logout
                     </button>
                 </div>
@@ -226,7 +247,8 @@
                         <h2 class="text-lg font-bold">Doctor Management</h2>
                         <p class="text-sm text-slate-500">Admin creates and manages doctor accounts</p>
                     </div>
-                    <button onclick="openDoctorModal()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl font-semibold">
+                    <button onclick="openDoctorModal()"
+                        class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl font-semibold">
                         + New Doctor
                     </button>
                 </div>
@@ -245,8 +267,10 @@
                         <p class="text-sm text-slate-500">Complete patient records</p>
                     </div>
                     <div class="flex gap-2">
-                        <input id="admin-patient-search" oninput="renderAdminPatients()" placeholder="Search patients..." class="border rounded-xl px-4 py-2 text-sm">
-                        <button onclick="loadAdminPatients()" class="px-4 py-2 rounded-xl border font-semibold">Refresh</button>
+                        <input id="admin-patient-search" oninput="renderAdminPatients()"
+                            placeholder="Search patients..." class="border rounded-xl px-4 py-2 text-sm">
+                        <button onclick="loadAdminPatients()"
+                            class="px-4 py-2 rounded-xl border font-semibold">Refresh</button>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
@@ -293,16 +317,20 @@
                 </div>
 
                 <div class="flex flex-wrap gap-2">
-                    <button onclick="downloadDoctorData()" class="px-4 py-2 rounded-xl bg-orange-500 text-white font-semibold text-sm">
+                    <button onclick="downloadDoctorData()"
+                        class="px-4 py-2 rounded-xl bg-orange-500 text-white font-semibold text-sm">
                         <i data-lucide="download" class="w-4 h-4 inline"></i> Download
                     </button>
-                    <button onclick="openCompletedRecords()" class="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-sm">
+                    <button onclick="openCompletedRecords()"
+                        class="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-sm">
                         <i data-lucide="folder-open" class="w-4 h-4 inline"></i> Completed
                     </button>
-                    <button onclick="fetchLatestData()" class="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-sm">
+                    <button onclick="fetchLatestData()"
+                        class="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-sm">
                         <i id="refresh-icon" data-lucide="refresh-cw" class="w-4 h-4 inline"></i> Refresh
                     </button>
-                    <button onclick="logout()" class="px-4 py-2 rounded-xl bg-slate-900 text-white font-semibold text-sm">
+                    <button onclick="logout()"
+                        class="px-4 py-2 rounded-xl bg-slate-900 text-white font-semibold text-sm">
                         Logout
                     </button>
                 </div>
@@ -358,24 +386,31 @@
                             <h3 class="font-bold">My Patient Queue</h3>
                             <span id="queue-count" class="text-xs bg-slate-100 px-2 py-1 rounded-full">0</span>
                         </div>
-                        <input id="patient-search" oninput="renderQueueList()" placeholder="Search patient..." class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-orange-400">
-                        
+                        <input id="patient-search" oninput="renderQueueList()" placeholder="Search patient..."
+                            class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-orange-400">
+
                         <div class="flex gap-2 mt-3">
-                            <button onclick="setFilter('all')" id="filter-all" class="flex-1 py-2 rounded-lg bg-orange-500 text-white text-xs font-semibold">All</button>
-                            <button onclick="setFilter('emergency')" id="filter-emergency" class="flex-1 py-2 rounded-lg bg-white border text-xs font-semibold">Emergency</button>
-                            <button onclick="setFilter('standard')" id="filter-standard" class="flex-1 py-2 rounded-lg bg-white border text-xs font-semibold">Standard</button>
+                            <button onclick="setFilter('all')" id="filter-all"
+                                class="flex-1 py-2 rounded-lg bg-orange-500 text-white text-xs font-semibold">All</button>
+                            <button onclick="setFilter('emergency')" id="filter-emergency"
+                                class="flex-1 py-2 rounded-lg bg-white border text-xs font-semibold">Emergency</button>
+                            <button onclick="setFilter('standard')" id="filter-standard"
+                                class="flex-1 py-2 rounded-lg bg-white border text-xs font-semibold">Standard</button>
                         </div>
 
                         <div class="flex items-center gap-2 mt-3">
-                            <input type="checkbox" id="select-all" onchange="toggleSelectAll(this.checked)" class="w-4 h-4">
-                            <label for="select-all" class="text-xs font-semibold text-slate-600">Select All Visible Patients</label>
+                            <input type="checkbox" id="select-all" onchange="toggleSelectAll(this.checked)"
+                                class="w-4 h-4">
+                            <label for="select-all" class="text-xs font-semibold text-slate-600">Select All Visible
+                                Patients</label>
                         </div>
                     </div>
 
                     <div id="patient-queue-list" class="p-4 space-y-3 max-h-[700px] overflow-y-auto"></div>
 
                     <div class="p-4 border-t">
-                        <button onclick="completeSelectedPatients()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold">
+                        <button onclick="completeSelectedPatients()"
+                            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold">
                             <i data-lucide="check-check" class="w-4 h-4 inline"></i> Complete Selected
                         </button>
                     </div>
@@ -403,7 +438,7 @@
                 <button onclick="closeDoctorModal()"><i data-lucide="x"></i></button>
             </div>
             <input type="hidden" id="editing-doctor-id">
-            
+
             <label class="text-sm font-semibold">Doctor Name</label>
             <input id="doctor-name" class="w-full border rounded-xl p-3 mt-2 mb-4" placeholder="Dr. Rahul Sharma">
 
@@ -411,7 +446,8 @@
             <input id="doctor-id" class="w-full border rounded-xl p-3 mt-2 mb-4" placeholder="DOC001">
 
             <label class="text-sm font-semibold">Password</label>
-            <input id="doctor-password" type="password" class="w-full border rounded-xl p-3 mt-2 mb-4" placeholder="Password">
+            <input id="doctor-password" type="password" class="w-full border rounded-xl p-3 mt-2 mb-4"
+                placeholder="Password">
 
             <label class="text-sm font-semibold">Department</label>
             <select id="doctor-department" class="w-full border rounded-xl p-3 mt-2 mb-4">
@@ -434,7 +470,8 @@
                 <option value="inactive">Inactive</option>
             </select>
 
-            <button onclick="saveDoctor()" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold">
+            <button onclick="saveDoctor()"
+                class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold">
                 Save Doctor
             </button>
         </div>
@@ -448,12 +485,14 @@
                     <h2 class="text-xl font-extrabold">Completed Consultations</h2>
                     <p class="text-sm text-slate-500">Saved permanently in database</p>
                 </div>
-                <button type="button" onclick="closeCompletedRecords()" class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-500 transition">
+                <button type="button" onclick="closeCompletedRecords()"
+                    class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-500 transition">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
             <div class="p-5">
-                <input id="completed-search" oninput="renderCompletedRecords()" placeholder="Search completed patients..." class="w-full border rounded-xl p-3 mb-4">
+                <input id="completed-search" oninput="renderCompletedRecords()"
+                    placeholder="Search completed patients..." class="w-full border rounded-xl p-3 mb-4">
                 <div id="completed-records-list" class="space-y-3 max-h-[65vh] overflow-y-auto"></div>
             </div>
         </div>
@@ -461,7 +500,8 @@
 
     <!-- RECORD DETAIL MODAL -->
     <div id="record-detail-modal" class="hidden fixed inset-0 z-[60] modal-bg items-center justify-center p-5">
-        <div id="record-detail-content" class="bg-white w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl p-6"></div>
+        <div id="record-detail-content" class="bg-white w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl p-6">
+        </div>
     </div>
 
     <!-- NOTIFICATION -->
@@ -711,46 +751,105 @@
         /* DOCTOR QUEUE & DATA */
         async function fetchLatestData() {
             const user = currentUser();
-            if (!user || user.role !== "doctor") return;
+
+            if (!user || user.role !== "doctor") {
+                return;
+            }
 
             const icon = document.getElementById("refresh-icon");
             icon?.classList.add("animate-spin");
 
             try {
-                const url = `${BASE_API_URL}/api/doctor/summary?doctor_id=${encodeURIComponent(user.id)}`;
-                const response = await fetch(url);
+                const doctorId = user.doctor_id || user.id;
 
-                if (!response.ok) throw new Error("Unable to load doctor queue");
+                const url =
+                    `${BASE_API_URL}/api/doctor/queue?doctor_id=${encodeURIComponent(doctorId)}`;
+
+                console.log("Fetching doctor queue:", url);
+
+                const response = await fetch(url, {
+                    method: "GET",
+                    headers: {
+                        "Accept": "application/json"
+                    },
+                    cache: "no-store"
+                });
+
+                if (!response.ok) {
+                    throw new Error(
+                        `HTTP ${response.status}: ${response.statusText}`
+                    );
+                }
 
                 const data = await response.json();
-                const newQueue = Array.isArray(data.active_queue) ? data.active_queue :
-                                 Array.isArray(data.queue) ? data.queue :
-                                 Array.isArray(data.patients) ? data.patients : [];
+
+                console.log("Doctor queue response:", data);
+
+                const newQueue = Array.isArray(data.active_queue)
+                    ? data.active_queue
+                    : [];
 
                 detectNewPatients(newQueue);
+
                 activeQueueData = newQueue;
 
                 updateDoctorStats(data);
+
                 renderQueueList();
+
                 updateEmergencyAlert();
+
+                // Mark dashboard as connected
                 updateConnection(true);
 
+                // Refresh selected patient's EMR
                 if (selectedPatientToken) {
-                    const patient = activeQueueData.find(p => String(p.token) === String(selectedPatientToken));
+
+                    const patient = activeQueueData.find(
+                        p =>
+                            String(p.token) ===
+                            String(selectedPatientToken)
+                    );
+
                     if (patient) {
+
                         const active = document.activeElement;
-                        const editingNotes = active && active.id === `doctor-notes-${patient.token}`;
-                        const micListening = doctorNotesListening && String(doctorNotesActiveToken) === String(patient.token);
+
+                        const editingNotes =
+                            active &&
+                            active.id ===
+                            `doctor-notes-${patient.token}`;
+
+                        const micListening =
+                            doctorNotesListening &&
+                            String(doctorNotesActiveToken) ===
+                            String(patient.token);
+
                         if (!editingNotes && !micListening) {
                             renderPatientEMR(patient);
                         }
                     }
                 }
+
             } catch (error) {
-                console.error(error);
+
+                console.error(
+                    "DOCTOR QUEUE ERROR:",
+                    error
+                );
+
                 updateConnection(false);
+
+                showNotification(
+                    `Backend connection failed: ${error.message}`,
+                    "error"
+                );
+
             } finally {
-                setTimeout(() => { icon?.classList.remove("animate-spin"); }, 300);
+
+                setTimeout(() => {
+                    icon?.classList.remove("animate-spin");
+                }, 300);
             }
         }
 
@@ -875,8 +974,7 @@
             const checked = selectedTokens.has(String(patient.token));
 
             return `
-                <div class="patient-card rounded-2xl border p-4 ${
-                    emergency ? "emergency-card emergency-glow" :
+                <div class="patient-card rounded-2xl border p-4 ${emergency ? "emergency-card emergency-glow" :
                     selected ? "patient-selected" : "bg-white border-slate-200"
                 }" onclick="selectPatient('${escapeAttribute(patient.token)}')">
                     <div class="flex items-start justify-between">
@@ -908,7 +1006,7 @@
                             <div class="mt-3 pt-3 border-t text-xs text-slate-600">
                                 <b>Complaint:</b> ${escapeHTML(patient.chief_complaint)}
                             </div>` : ""
-                        }
+                }
                     </div>
                 </div>`;
         }
@@ -973,8 +1071,8 @@
                             <span class="text-xs bg-slate-100 px-3 py-1 rounded-full font-medium">
                                 ${escapeHTML(String(symptom))}
                             </span>`).join("") :
-                            `<span class="text-sm text-slate-400">No symptoms recorded</span>`
-                        }
+                    `<span class="text-sm text-slate-400">No symptoms recorded</span>`
+                }
                     </div>
                 </div>`;
         }
@@ -1012,7 +1110,7 @@
                                     <p class="text-xs text-slate-500 mt-1">
                                         Assigned Doctor: <b>${escapeHTML(patient.assigned_doctor_name)}</b>
                                     </p>` : ""
-                                }
+                }
                             </div>
                             <button onclick="markCompleted('${escapeAttribute(patient.token)}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl font-bold h-fit">
                                 <i data-lucide="check-circle" class="w-4 h-4 inline"></i> Complete Consultation
@@ -1105,7 +1203,7 @@
                                         <p class="font-semibold text-slate-500">No medical report uploaded</p>
                                         <p class="text-xs text-slate-400 mt-1">Upload a PNG, JPG or WEBP medical report.</p>
                                     </div>`
-                                }
+                }
                             </div>
                         </div>
                     </div>
@@ -1207,7 +1305,7 @@
             }
 
             if (doctorNotesRecognition) {
-                try { doctorNotesRecognition.abort(); } catch (e) {}
+                try { doctorNotesRecognition.abort(); } catch (e) { }
                 doctorNotesRecognition = null;
             }
 
@@ -1267,7 +1365,7 @@
             recognition.onend = () => {
                 if (doctorNotesListening && doctorNotesActiveToken === tokenString && doctorNotesRecognition === recognition) {
                     setTimeout(() => {
-                        try { recognition.start(); } catch (e) {}
+                        try { recognition.start(); } catch (e) { }
                     }, 300);
                 } else {
                     stopDoctorNotesMic();
@@ -1287,7 +1385,7 @@
             doctorNotesActiveToken = null;
 
             if (doctorNotesRecognition) {
-                try { doctorNotesRecognition.abort(); } catch (e) {}
+                try { doctorNotesRecognition.abort(); } catch (e) { }
                 doctorNotesRecognition = null;
             }
 
@@ -1505,7 +1603,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(activeQueueData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `medikiosk_doctor_queue_${new Date().toISOString().slice(0,10)}.json`);
+            downloadAnchor.setAttribute("download", `medikiosk_doctor_queue_${new Date().toISOString().slice(0, 10)}.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
@@ -1650,11 +1748,12 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(adminPatients, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `medikiosk_admin_export_${new Date().toISOString().slice(0,10)}.json`);
+            downloadAnchor.setAttribute("download", `medikiosk_admin_export_${new Date().toISOString().slice(0, 10)}.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
         }
     </script>
 </body>
+
 </html>
