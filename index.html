@@ -978,7 +978,7 @@
 
         // Connect WebSocket to Render Backend
 const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-const socketUrl = `${wsProtocol}//medikiosk-backend-8rs2.onrender.com/ws/kiosk`;
+const socketUrl = "wss://medikiosk-backend-8rs2.onrender.com/ws/kiosk";
 let kioskSocket = null;
 
 function initKioskWebSocket() {
