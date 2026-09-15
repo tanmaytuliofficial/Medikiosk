@@ -255,7 +255,6 @@ def init_database():
             )
         """)
 
-    # Seed Default Admin
     cursor.execute("SELECT id FROM admins WHERE username = 'admin' LIMIT 1")
     if not cursor.fetchone():
         cursor.execute(
@@ -263,7 +262,6 @@ def init_database():
             ("admin", "admin123")
         )
 
-    # Seed Default Doctors
     default_doctors = [
         ("DOC-001", "Dr. Rahul Sharma", "General Medicine"),
         ("DOC-002", "Dr. Priya Verma", "Orthopedics"),
@@ -285,9 +283,6 @@ def init_database():
                 (doc_id, name, dept, "doctor123", "doctor123")
             )
 
-    # --------------------------------------------------------
-    # SEED DUMMY PATIENT & NFC TAG FOR YOUR UID (C9793207)
-    # --------------------------------------------------------
     dummy_uid = "C9793207"
     dummy_patient_id = "MK-101"
     
@@ -398,7 +393,7 @@ def patient_row_to_dict(row):
     }
 
 # ============================================================
-# NFC TAP ENDPOINT (POST)
+# NFC TAP ENDPOINT
 # ============================================================
 
 @app.post("/api/nfc/tap")
@@ -454,8 +449,9 @@ async def nfc_tap(req: NFCTapRequest):
         }
     finally:
         conn.close()
+
 # ============================================================
-# CHAT ENDPOINT (POST /api/chat/ai-assistant) - EXACT URL MATCH
+# CHAT ENDPOINTS (CLEAN SINGLE ROUTE DECORATORS)
 # ============================================================
 
 @app.post("/api/chat/ai-assistant")
@@ -464,61 +460,38 @@ async def nfc_tap(req: NFCTapRequest):
 async def chat_endpoint(req: ChatRequest):
     user_msg = (req.user_message or "").strip()
     pain_site = req.pain_site or ""
+    symptom_text = user_msg or pain_site or "symptom check"
 
-    symptom_text = user_msg or pain_site or "General symptom check"
-    reply_text = f"I have noted your symptom: '{symptom_text}'. Could you please tell me since how many days you have been experiencing this?"
-    
+    # Dynamic Fallbacks based on message content
+    lower_msg = symptom_text.lower()
+    if any(k in lower_msg for k in ["day", "days", "since", "week", "month"]):
+        reply_text = f"Got it. On a scale of 1 to 10, how severe would you rate the pain or discomfort?"
+    elif any(k in lower_msg for k in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "mild", "severe"]):
+        reply_text = f"Thank you. Are you currently taking any regular medications or do you have past medical conditions (e.g. Diabetes, BP)?"
+    else:
+        reply_text = f"I have noted '{symptom_text}'. How many days have you been experiencing this discomfort?"
+
+    # LLM Dynamic Generation via Groq
     if groq_client:
         try:
-            prompt_content = f"Patient says: {symptom_text}. Pain Site: {pain_site}. Ask a short, helpful follow-up question."
+            messages_payload = [
+                {"role": "system", "content": "You are MediKiosk AI, an intelligent Indian hospital OPD intake assistant. Conduct SOCRATES history taking. Ask ONE concise follow-up question regarding onset, duration, severity, or associated symptoms. Do not repeat questions already answered."}
+            ]
+            for h in req.chat_history[-4:]:
+                role = "assistant" if h.get("sender") in ["ai", "assistant", "bot"] else "user"
+                messages_payload.append({"role": role, "content": str(h.get("text") or h.get("content") or "")})
+            
+            messages_payload.append({"role": "user", "content": f"User input: {symptom_text}. Selected site: {pain_site}."})
+
             response = groq_client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": "You are MediKiosk AI, a clinical intake assistant. Keep replies brief and ask one follow-up question."},
-                    {"role": "user", "content": prompt_content}
-                ],
+                messages=messages_payload,
                 max_tokens=150,
             )
             if response.choices and response.choices[0].message.content:
                 reply_text = response.choices[0].message.content.strip()
         except Exception as e:
-            print("Groq API error fallback:", e)
-
-    return {
-        "status": "success",
-        "reply": reply_text,
-        "ai_response": reply_text,
-        "response": reply_text,
-        "timestamp": now()
-    }
-# ============================================================
-# CHAT ENDPOINT (POST /api/chat AND /api/chat/)
-# ============================================================
-
-@app.post("/api/chat")
-@app.post("/api/chat/")
-async def chat_endpoint(req: ChatRequest):
-    user_msg = (req.user_message or "").strip()
-    pain_site = req.pain_site or ""
-
-    symptom_text = user_msg or pain_site or "General symptom check"
-    reply_text = f"I have noted your symptom: '{symptom_text}'. Could you please tell me since how many days you have been experiencing this?"
-    
-    if groq_client:
-        try:
-            prompt_content = f"Patient says: {symptom_text}. Pain Site: {pain_site}. Ask a short, helpful follow-up question."
-            response = groq_client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": "You are MediKiosk AI, a clinical intake assistant. Keep replies brief and ask one follow-up question."},
-                    {"role": "user", "content": prompt_content}
-                ],
-                max_tokens=150,
-            )
-            if response.choices and response.choices[0].message.content:
-                reply_text = response.choices[0].message.content.strip()
-        except Exception as e:
-            print("Groq API error fallback:", e)
+            print("Groq API error fallback executed:", e)
 
     return {
         "status": "success",
@@ -551,7 +524,7 @@ async def websocket_endpoint(websocket: WebSocket):
             connected_clients.remove(websocket)
 
 # ============================================================
-# START DATABASE & APP
+# APP STARTUP
 # ============================================================
 
 init_database()
