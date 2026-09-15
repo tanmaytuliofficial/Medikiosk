@@ -451,7 +451,8 @@ async def nfc_tap(req: NFCTapRequest):
         conn.close()
 
 # ============================================================
-# CHAT ENDPOINTS (CLEAN SINGLE ROUTE DECORATORS)
+# ============================================================
+# CHAT ENDPOINT WITH AUTO OPD TOKEN GENERATION
 # ============================================================
 
 @app.post("/api/chat/ai-assistant")
@@ -461,13 +462,40 @@ async def chat_endpoint(req: ChatRequest):
     user_msg = (req.user_message or "").strip()
     pain_site = req.pain_site or ""
     symptom_text = user_msg or pain_site or "symptom check"
+    history_len = len(req.chat_history)
 
-    # Dynamic Fallbacks based on message content
+    # If 3+ exchanges are done, COMPLETE case-taking & generate Token!
+    if history_len >= 5:
+        conn = get_db()
+        cursor = conn.cursor()
+        try:
+            # Generate next dynamic OPD Token Number
+            cursor.execute("SELECT MAX(token) as max_token FROM patients")
+            row = cursor.fetchone()
+            max_t = safe_row_value(row, "max_token", 100) or 100
+            new_token = max_t + 1
+            
+            completion_msg = f"Thank you! Your clinical history intake is complete. Your OPD Token Number is #{new_token}. Please proceed to Doctor's Cabin."
+            
+            return {
+                "status": "success",
+                "reply": completion_msg,
+                "ai_response": completion_msg,
+                "response": completion_msg,
+                "is_completed": True,
+                "token": new_token,
+                "opd_token": new_token,
+                "timestamp": now()
+            }
+        finally:
+            conn.close()
+
+    # Dynamic SOCRATES Questioning Flow
     lower_msg = symptom_text.lower()
     if any(k in lower_msg for k in ["day", "days", "since", "week", "month"]):
-        reply_text = f"Got it. On a scale of 1 to 10, how severe would you rate the pain or discomfort?"
+        reply_text = "Got it. On a scale of 1 to 10, how severe would you rate the pain or discomfort?"
     elif any(k in lower_msg for k in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "mild", "severe"]):
-        reply_text = f"Thank you. Are you currently taking any regular medications or do you have past medical conditions (e.g. Diabetes, BP)?"
+        reply_text = "Thank you. Are you currently taking any regular medications or do you have past medical conditions (e.g. Diabetes, BP)?"
     else:
         reply_text = f"I have noted '{symptom_text}'. How many days have you been experiencing this discomfort?"
 
@@ -475,7 +503,7 @@ async def chat_endpoint(req: ChatRequest):
     if groq_client:
         try:
             messages_payload = [
-                {"role": "system", "content": "You are MediKiosk AI, an intelligent Indian hospital OPD intake assistant. Conduct SOCRATES history taking. Ask ONE concise follow-up question regarding onset, duration, severity, or associated symptoms. Do not repeat questions already answered."}
+                {"role": "system", "content": "You are MediKiosk AI, an OPD intake assistant. Conduct SOCRATES history taking. Ask ONE short follow-up question. If 3 questions are already asked, say 'Thank you, your intake is complete'."}
             ]
             for h in req.chat_history[-4:]:
                 role = "assistant" if h.get("sender") in ["ai", "assistant", "bot"] else "user"
@@ -491,16 +519,16 @@ async def chat_endpoint(req: ChatRequest):
             if response.choices and response.choices[0].message.content:
                 reply_text = response.choices[0].message.content.strip()
         except Exception as e:
-            print("Groq API error fallback executed:", e)
+            print("Groq API fallback executed:", e)
 
     return {
         "status": "success",
         "reply": reply_text,
         "ai_response": reply_text,
         "response": reply_text,
+        "is_completed": False,
         "timestamp": now()
     }
-
 # ============================================================
 # WEBSOCKET ENDPOINT
 # ============================================================
