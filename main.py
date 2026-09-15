@@ -454,7 +454,43 @@ async def nfc_tap(req: NFCTapRequest):
         }
     finally:
         conn.close()
+# ============================================================
+# CHAT ENDPOINT (POST /api/chat/ai-assistant) - EXACT URL MATCH
+# ============================================================
 
+@app.post("/api/chat/ai-assistant")
+@app.post("/api/chat")
+@app.post("/api/chat/")
+async def chat_endpoint(req: ChatRequest):
+    user_msg = (req.user_message or "").strip()
+    pain_site = req.pain_site or ""
+
+    symptom_text = user_msg or pain_site or "General symptom check"
+    reply_text = f"I have noted your symptom: '{symptom_text}'. Could you please tell me since how many days you have been experiencing this?"
+    
+    if groq_client:
+        try:
+            prompt_content = f"Patient says: {symptom_text}. Pain Site: {pain_site}. Ask a short, helpful follow-up question."
+            response = groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": "You are MediKiosk AI, a clinical intake assistant. Keep replies brief and ask one follow-up question."},
+                    {"role": "user", "content": prompt_content}
+                ],
+                max_tokens=150,
+            )
+            if response.choices and response.choices[0].message.content:
+                reply_text = response.choices[0].message.content.strip()
+        except Exception as e:
+            print("Groq API error fallback:", e)
+
+    return {
+        "status": "success",
+        "reply": reply_text,
+        "ai_response": reply_text,
+        "response": reply_text,
+        "timestamp": now()
+    }
 # ============================================================
 # CHAT ENDPOINT (POST /api/chat AND /api/chat/)
 # ============================================================
