@@ -454,7 +454,41 @@ async def nfc_tap(req: NFCTapRequest):
         }
     finally:
         conn.close()
+# ============================================================
+# CHAT ENDPOINT (POST /api/chat) - FIXES 404 CONNECTION ERROR
+# ============================================================
 
+@app.post("/api/chat")
+async def chat_endpoint(req: ChatRequest):
+    user_msg = (req.user_message or "").strip()
+    if not user_msg and not req.pain_site:
+        raise HTTPException(status_code=400, detail="User message or pain site is required")
+
+    reply_text = f"I have noted your symptom: '{user_msg or req.pain_site}'. Could you please tell me since how many days you have been experiencing this?"
+    
+    if groq_client:
+        try:
+            prompt_content = f"Patient says: {user_msg}. Selected Pain Site: {req.pain_site or 'Not specified'}. Ask a relevant brief clinical follow-up question."
+            response = groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": "You are MediKiosk AI, an empathetic clinical intake assistant. Keep replies brief, supportive, and focused on asking one follow-up question about symptom duration, severity, or onset."},
+                    {"role": "user", "content": prompt_content}
+                ],
+                max_tokens=150,
+            )
+            if response.choices and response.choices[0].message.content:
+                reply_text = response.choices[0].message.content.strip()
+        except Exception as e:
+            print("Groq API error fallback:", e)
+
+    return {
+        "status": "success",
+        "reply": reply_text,
+        "ai_response": reply_text,
+        "response": reply_text,
+        "timestamp": now()
+    }
 # ============================================================
 # WEBSOCKET ENDPOINT
 # ============================================================
